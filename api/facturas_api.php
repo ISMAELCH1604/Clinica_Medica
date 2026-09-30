@@ -1,50 +1,51 @@
 <?php
-session_start();
+// =====================================================================
+// API de Facturas — con seguridad centralizada
+// =====================================================================
 require_once '../conexion.php';
+require_once '../includes/seguridad.php';
+
 header('Content-Type: application/json; charset=utf-8');
 
-if (!isset($_SESSION['id_usuario'])) {
-    http_response_code(401);
-    echo json_encode(['ok' => false, 'error' => 'No autorizado']);
-    exit;
-}
+// --- SEGURIDAD: exigir sesión activa (responde JSON si no lo está) ---
+requerirLoginAPI();
 
 $accion = $_POST['accion'] ?? $_GET['accion'] ?? '';
 
 try {
     switch ($accion) {
 
-        // ---- LISTAR con saldo ----
+        // ---- LISTAR con saldo y filtro por estado ----
         case 'listar':
             $filtro = $_GET['filtro'] ?? 'todas';
-            $where = '';
+            $where  = '';
             if ($filtro === 'pendientes')      $where = "WHERE f.estado = 'pendiente'";
             elseif ($filtro === 'pagadas')     $where = "WHERE f.estado = 'pagada'";
             elseif ($filtro === 'anuladas')    $where = "WHERE f.estado = 'anulada'";
 
             $sql = "
                 SELECT f.id_factura,
-                    f.id_cita,
-                    f.fecha_emision,
-                    f.total,
-                    COALESCE(SUM(p.monto), 0) AS pagado,
-                    f.total - COALESCE(SUM(p.monto), 0) AS saldo,
-                    f.estado AS estado_factura,
-                    CONCAT(pa.nombre, ' ', pa.apellido) AS paciente,
-                    DATE(c.fecha_hora) AS fecha_cita
+                       f.id_cita,
+                       f.fecha_emision,
+                       f.total,
+                       COALESCE(SUM(p.monto), 0) AS pagado,
+                       f.total - COALESCE(SUM(p.monto), 0) AS saldo,
+                       f.estado,
+                       CONCAT(pa.nombre, ' ', pa.apellido) AS paciente,
+                       DATE(c.fecha_hora) AS fecha_cita
                 FROM facturas f
                 INNER JOIN citas c      ON c.id_cita = f.id_cita
                 INNER JOIN pacientes pa ON pa.id_paciente = c.id_paciente
                 LEFT  JOIN pagos p      ON p.id_factura = f.id_factura
                 $where
                 GROUP BY f.id_factura,
-                        f.id_cita,
-                        f.fecha_emision,
-                        f.total,
-                        f.estado,
-                        pa.nombre,
-                        pa.apellido,
-                        c.fecha_hora
+                         f.id_cita,
+                         f.fecha_emision,
+                         f.total,
+                         f.estado,
+                         pa.nombre,
+                         pa.apellido,
+                         c.fecha_hora
                 ORDER BY f.fecha_emision DESC
                 LIMIT 200
             ";
@@ -59,10 +60,10 @@ try {
                        COALESCE(SUM(t.costo),0) AS total_estimado,
                        COUNT(d.id_detalle) AS num_tratamientos
                 FROM citas c
-                JOIN pacientes p ON p.id_paciente = c.id_paciente
-                LEFT JOIN detalle_tratamiento_cita d ON d.id_cita = c.id_cita
-                LEFT JOIN tratamientos t ON t.id_tratamiento = d.id_tratamiento
-                LEFT JOIN facturas f ON f.id_cita = c.id_cita
+                INNER JOIN pacientes p ON p.id_paciente = c.id_paciente
+                LEFT  JOIN detalle_tratamiento_cita d ON d.id_cita = c.id_cita
+                LEFT  JOIN tratamientos t ON t.id_tratamiento = d.id_tratamiento
+                LEFT  JOIN facturas f ON f.id_cita = c.id_cita
                 WHERE f.id_factura IS NULL
                   AND c.estado IN ('programada','completada')
                 GROUP BY c.id_cita, c.fecha_hora, c.estado, p.nombre, p.apellido
@@ -76,7 +77,12 @@ try {
         case 'emitir':
             $id_cita = (int)($_POST['id_cita'] ?? 0);
 
-            // Setear usuario para auditoría
+            if ($id_cita <= 0) {
+                echo json_encode(['ok' => false, 'error' => 'ID de cita inválido.']);
+                break;
+            }
+
+            // Setear usuario para auditoría (triggers)
             $pdo->prepare("SET @usuario_actual = ?")->execute([$_SESSION['id_usuario']]);
 
             try {
@@ -87,7 +93,7 @@ try {
                     'ok' => true,
                     'id_factura' => $res['id_factura_creada'],
                     'total' => $res['total_facturado'],
-                    'mensaje' => 'Factura emitida'
+                    'mensaje' => 'Factura emitida correctamente'
                 ]);
             } catch (PDOException $e) {
                 echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
@@ -97,6 +103,11 @@ try {
         // ---- ANULAR factura ----
         case 'anular':
             $id = (int)($_POST['id_factura'] ?? 0);
+
+            if ($id <= 0) {
+                echo json_encode(['ok' => false, 'error' => 'ID de factura inválido.']);
+                break;
+            }
 
             // Verificar que no tenga pagos
             $stmt = $pdo->prepare("SELECT COUNT(*) FROM pagos WHERE id_factura = ?");
@@ -120,6 +131,11 @@ try {
         case 'detalle':
             $id = (int)($_GET['id'] ?? 0);
 
+            if ($id <= 0) {
+                echo json_encode(['ok' => false, 'error' => 'ID inválido.']);
+                break;
+            }
+
             // Datos generales
             $stmt = $pdo->prepare("
                 SELECT f.id_factura, f.id_cita, f.fecha_emision, f.total, f.estado,
@@ -127,8 +143,8 @@ try {
                        p.dpi, p.telefono,
                        c.fecha_hora AS fecha_cita
                 FROM facturas f
-                JOIN citas c ON c.id_cita = f.id_cita
-                JOIN pacientes p ON p.id_paciente = c.id_paciente
+                INNER JOIN citas c     ON c.id_cita = f.id_cita
+                INNER JOIN pacientes p ON p.id_paciente = c.id_paciente
                 WHERE f.id_factura = ?
             ");
             $stmt->execute([$id]);
@@ -142,7 +158,7 @@ try {
             $stmt = $pdo->prepare("
                 SELECT t.nombre, t.costo, d.observaciones
                 FROM detalle_tratamiento_cita d
-                JOIN tratamientos t ON t.id_tratamiento = d.id_tratamiento
+                INNER JOIN tratamientos t ON t.id_tratamiento = d.id_tratamiento
                 WHERE d.id_cita = ?
             ");
             $stmt->execute([$factura['id_cita']]);
@@ -173,5 +189,6 @@ try {
             echo json_encode(['ok' => false, 'error' => 'Acción no válida']);
     }
 } catch (PDOException $e) {
+    http_response_code(500);
     echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
 }

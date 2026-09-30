@@ -1,8 +1,14 @@
 <?php
-session_start();
 require_once 'conexion.php';
+require_once 'includes/seguridad.php';
 
 $error = '';
+$aviso = '';
+
+// Aviso si la sesión expiró
+if (isset($_GET['expirada'])) {
+    $aviso = 'Tu sesión expiró por inactividad. Vuelve a iniciar sesión.';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $usuario  = trim($_POST['usuario'] ?? '');
@@ -16,13 +22,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $u = $stmt->fetch();
 
         if ($u && password_verify($password, $u['password_hash'])) {
-            $_SESSION['id_usuario']     = $u['id_usuario'];
-            $_SESSION['nombre_usuario'] = $u['nombre_usuario'];
-            $_SESSION['rol']            = $u['rol'];
+            // ✅ Login exitoso: regenerar ID de sesión (evita session fixation)
+            session_regenerate_id(true);
+
+            $_SESSION['id_usuario']       = $u['id_usuario'];
+            $_SESSION['nombre_usuario']   = $u['nombre_usuario'];
+            $_SESSION['rol']              = $u['rol'];
+            $_SESSION['ultima_actividad'] = time();
+
+            // Actualizar último acceso (opcional pero recomendado)
+            $pdo->prepare("UPDATE usuarios SET fecha_creacion = fecha_creacion WHERE id_usuario = ?")
+                ->execute([$u['id_usuario']]);
+
             header('Location: modulos/dashboard.php');
             exit;
         } else {
             $error = 'Usuario o contraseña incorrectos.';
+            // Retardo para dificultar ataques de fuerza bruta
+            usleep(500000); // 0.5 segundos
         }
     }
 }
@@ -44,8 +61,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <h3 class="text-center mb-4">🦷 Clínica Dental</h3>
                     <h5 class="text-center text-muted mb-4">Iniciar sesión</h5>
 
-                    <?php if ($error): ?>
-                        <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+                    <?php if ($aviso): ?>
+                        <div class="alert alert-warning"><?= htmlspecialchars($aviso) ?></div>
                     <?php endif; ?>
 
                     <form method="POST">
@@ -60,9 +77,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <button type="submit" class="btn btn-primary w-100">Entrar</button>
                     </form>
 
-                    <p class="text-center text-muted mt-3 mb-0" style="font-size: 0.85rem;">
+                    <!-- <p class="text-center text-muted mt-3 mb-0" style="font-size: 0.85rem;">
                         Usuario de prueba: <strong>admin</strong> / <strong>admin1234</strong>
-                    </p>
+                    </p> -->
                 </div>
             </div>
         </div>

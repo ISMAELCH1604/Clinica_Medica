@@ -1,20 +1,16 @@
 <?php
-session_start();
 require_once '../conexion.php';
+require_once '../includes/seguridad.php';
 header('Content-Type: application/json; charset=utf-8');
 
-if (!isset($_SESSION['id_usuario'])) {
-    http_response_code(401);
-    echo json_encode(['ok' => false, 'error' => 'No autorizado']);
-    exit;
-}
+// ⚠️ Solo administrador y auditor pueden ver la bitácora
+requerirRolAPI(['administrador', 'auditor']);
 
 $accion = $_POST['accion'] ?? $_GET['accion'] ?? '';
 
 try {
     switch ($accion) {
 
-        // ---- LISTAR con filtros dinámicos ----
         case 'listar':
             $condiciones = [];
             $params = [];
@@ -43,14 +39,10 @@ try {
             $where = $condiciones ? 'WHERE ' . implode(' AND ', $condiciones) : '';
 
             $sql = "
-                SELECT b.id_bitacora,
-                       b.fecha_hora,
+                SELECT b.id_bitacora, b.fecha_hora,
                        COALESCE(u.nombre_usuario, '(sistema)') AS usuario,
-                       u.rol,
-                       b.tabla_afectada,
-                       b.operacion,
-                       b.valor_anterior,
-                       b.valor_nuevo
+                       u.rol, b.tabla_afectada, b.operacion,
+                       b.valor_anterior, b.valor_nuevo
                 FROM bitacora_auditoria b
                 LEFT JOIN usuarios u ON u.id_usuario = b.id_usuario
                 $where
@@ -62,33 +54,27 @@ try {
             echo json_encode(['ok' => true, 'datos' => $stmt->fetchAll()]);
             break;
 
-        // ---- Estadísticas ----
         case 'estadisticas':
             $total = $pdo->query("SELECT COUNT(*) FROM bitacora_auditoria")->fetchColumn();
             $hoy   = $pdo->query("SELECT COUNT(*) FROM bitacora_auditoria WHERE DATE(fecha_hora) = CURDATE()")->fetchColumn();
 
             $porOperacion = $pdo->query("
                 SELECT operacion, COUNT(*) AS total
-                FROM bitacora_auditoria
-                GROUP BY operacion
+                FROM bitacora_auditoria GROUP BY operacion
             ")->fetchAll();
 
             $porTabla = $pdo->query("
                 SELECT tabla_afectada, COUNT(*) AS total
                 FROM bitacora_auditoria
-                GROUP BY tabla_afectada
-                ORDER BY total DESC
-                LIMIT 8
+                GROUP BY tabla_afectada ORDER BY total DESC LIMIT 8
             ")->fetchAll();
 
             $porUsuario = $pdo->query("
                 SELECT COALESCE(u.nombre_usuario, '(sistema)') AS usuario,
-                       u.rol,
-                       COUNT(*) AS total
+                       u.rol, COUNT(*) AS total
                 FROM bitacora_auditoria b
                 LEFT JOIN usuarios u ON u.id_usuario = b.id_usuario
-                GROUP BY u.nombre_usuario, u.rol
-                ORDER BY total DESC
+                GROUP BY u.nombre_usuario, u.rol ORDER BY total DESC
             ")->fetchAll();
 
             echo json_encode([
@@ -101,16 +87,14 @@ try {
             ]);
             break;
 
-        // ---- Opciones para filtros ----
         case 'opciones':
             $usuarios = $pdo->query("
-                SELECT DISTINCT id_usuario, nombre_usuario, rol 
+                SELECT DISTINCT id_usuario, nombre_usuario, rol
                 FROM usuarios ORDER BY nombre_usuario
             ")->fetchAll();
 
             $tablas = $pdo->query("
-                SELECT DISTINCT tabla_afectada FROM bitacora_auditoria
-                ORDER BY tabla_afectada
+                SELECT DISTINCT tabla_afectada FROM bitacora_auditoria ORDER BY tabla_afectada
             ")->fetchAll(PDO::FETCH_COLUMN);
 
             echo json_encode([
@@ -121,13 +105,12 @@ try {
             ]);
             break;
 
-        // ---- Exportar CSV ----
         case 'exportar_csv':
             header('Content-Type: text/csv; charset=utf-8');
             header('Content-Disposition: attachment; filename="bitacora_' . date('Ymd_His') . '.csv"');
 
             $out = fopen('php://output', 'w');
-            fputs($out, "\xEF\xBB\xBF"); // BOM UTF-8 para Excel
+            fputs($out, "\xEF\xBB\xBF");
             fputcsv($out, ['ID', 'Fecha', 'Usuario', 'Rol', 'Tabla', 'Operación', 'Valor anterior', 'Valor nuevo']);
 
             $stmt = $pdo->query("
@@ -137,19 +120,13 @@ try {
                        b.valor_anterior, b.valor_nuevo
                 FROM bitacora_auditoria b
                 LEFT JOIN usuarios u ON u.id_usuario = b.id_usuario
-                ORDER BY b.fecha_hora DESC
-                LIMIT 5000
+                ORDER BY b.fecha_hora DESC LIMIT 5000
             ");
             while ($r = $stmt->fetch()) {
                 fputcsv($out, [
-                    $r['id_bitacora'],
-                    $r['fecha_hora'],
-                    $r['usuario'],
-                    $r['rol'],
-                    $r['tabla_afectada'],
-                    $r['operacion'],
-                    $r['valor_anterior'],
-                    $r['valor_nuevo'],
+                    $r['id_bitacora'], $r['fecha_hora'], $r['usuario'], $r['rol'],
+                    $r['tabla_afectada'], $r['operacion'],
+                    $r['valor_anterior'], $r['valor_nuevo'],
                 ]);
             }
             fclose($out);
@@ -159,5 +136,6 @@ try {
             echo json_encode(['ok' => false, 'error' => 'Acción no válida']);
     }
 } catch (PDOException $e) {
+    http_response_code(500);
     echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
 }
