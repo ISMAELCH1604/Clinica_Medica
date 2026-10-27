@@ -124,8 +124,8 @@ $nombre = $_SESSION['nombre_usuario'] ?? '';
         <a href="dashboard.php" class="brand">
             <i class="bi bi-heart-pulse text-primary"></i> Clínica Dental
         </a>
-        <ul class="nav flex-column mt-3 flex-grow-1">
-            <li class="nav-item"><a class="nav-link" href="dashboard.php"><i class="bi bi-grid-1x2"></i> Dashboard</a></li>
+        <!-- <ul class="nav flex-column mt-3 flex-grow-1">
+            <li class="nav-item"><a class="nav-link" href="dashboard.php"><i class="bi bi-grid-1x2"></i> Dashboard</a></li> -->
             
             <?php if (in_array($rol, ['administrador', 'recepcion', 'odontologo'])): ?>
                 <li class="nav-item"><a class="nav-link" href="pacientes.php"><i class="bi bi-people"></i> Pacientes</a></li>
@@ -143,6 +143,11 @@ $nombre = $_SESSION['nombre_usuario'] ?? '';
 
             <?php if ($rol === 'administrador'): ?>
                 <li class="nav-item"><a class="nav-link" href="usuarios.php"><i class="bi bi-person-gear"></i> Usuarios</a></li>
+            <?php endif; ?>
+
+            <?php if (in_array($rol, ['administrador', 'auditor'])): ?>
+                <li class="nav-item"><a class="nav-link" href="bitacora.php"><i class="bi bi-shield-check"></i> Auditoría</a></li>
+                <li class="nav-item"><a class="nav-link" href="reportes.php"><i class="bi bi-file-earmark-bar-graph"></i> Reportes</a></li>
             <?php endif; ?>
         </ul>
         <div class="user-profile">
