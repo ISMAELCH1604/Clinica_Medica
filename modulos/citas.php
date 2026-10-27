@@ -5,24 +5,12 @@ require_once '../includes/header.php';
 ?>
 
 <style>
-    /* Estilos para los botones de acción (igual que en pacientes) */
-    .action-btn {
-        width: 32px;
-        height: 32px;
-        padding: 0;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 6px;
-        border: 1px solid #e5e7eb;
-        background: #fff;
-        color: #6b7280;
-        transition: all 0.2s;
-    }
+    .action-btn { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid #e5e7eb; background: #fff; color: #6b7280; transition: all 0.2s; }
     .action-btn:hover { background: #f3f4f6; color: #111827; }
     .action-btn.edit:hover { color: #d97706; border-color: #fcd34d; background: #fffbeb; }
     .action-btn.delete:hover { color: #dc2626; border-color: #fca5a5; background: #fef2f2; }
     .action-btn.view:hover { color: #0d6efd; border-color: #93c5fd; background: #eff6ff; }
+    .action-btn.tools:hover { color: #6f42c1; border-color: #d3d0e5; background: #f5f3ff; }
 </style>
 
 <!-- Cabecera con Buscador -->
@@ -104,7 +92,31 @@ require_once '../includes/header.php';
     </div>
 </div>
 
-<!-- Modal Expediente Clínico (Para llenar) -->
+<!-- Modal Tratamientos -->
+<div class="modal fade" id="modalTratamientos" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form id="formTratamientos">
+                <div class="modal-header bg-dark text-white border-0">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-tools me-2"></i> Tratamientos de la Cita</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" name="id_cita" id="trat_id_cita">
+                    <p class="text-muted small mb-3">Selecciona los tratamientos que se realizarán en esta cita.</p>
+                    <div id="listaTratamientos" class="d-flex flex-column gap-2">
+                        <!-- Se llena con JS -->
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="submit" class="btn btn-primary w-100">Guardar Tratamientos</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Expediente Clínico -->
 <div class="modal fade" id="modalExpediente" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
@@ -140,9 +152,13 @@ window.addEventListener('load', function () {
 
     const modalCita = new bootstrap.Modal(document.getElementById('modalCita'));
     const modalExpediente = new bootstrap.Modal(document.getElementById('modalExpediente'));
+    const modalTratamientos = new bootstrap.Modal(document.getElementById('modalTratamientos'));
+    
     const formCita  = document.getElementById('formCita');
     const formExpediente  = document.getElementById('formExpediente');
-    let datosCitasGlobal = []; // Para guardar las citas y poder filtrar sin ir a la BD cada vez
+    const formTratamientos = document.getElementById('formTratamientos');
+    
+    let datosCitasGlobal = []; 
 
     async function cargarCitas() {
         const filtro = document.getElementById('filtro').value;
@@ -154,15 +170,14 @@ window.addEventListener('load', function () {
             const j = await r.json();
             if (!j.ok) throw new Error(j.error);
 
-            datosCitasGlobal = j.datos; // Guardamos los datos
+            datosCitasGlobal = j.datos; 
             renderizarTabla(datosCitasGlobal);
         } catch (e) {
             tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-danger">Error: ${e.message}</td></tr>`;
         }
     }
 
-    // renderizar tabla de citas
-        function renderizarTabla(citas) {
+    function renderizarTabla(citas) {
         const tbody = document.getElementById('tablaCitas');
         if (citas.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">No se encontraron citas.</td></tr>';
@@ -172,12 +187,9 @@ window.addEventListener('load', function () {
         const ahora = new Date();
 
         tbody.innerHTML = citas.map(c => {
-            // Validar si la cita ya pasó
             const fechaCita = new Date(c.fecha_hora.replace(' ', 'T'));
             const yaPaso = fechaCita < ahora;
             const esProgramada = c.estado === 'programada';
-            
-            // Si ya pasó y sigue programada, resaltamos la fila
             const alertaFila = (yaPaso && esProgramada) ? 'table-warning' : '';
 
             const estadoBadge = {
@@ -188,24 +200,26 @@ window.addEventListener('load', function () {
             }[c.estado];
 
             let acciones = '';
+            // BOTÓN DE TRATAMIENTOS (Siempre visible)
+            const btnTratamientos = `<button class="action-btn tools me-1" onclick="abrirTratamientos(${c.id_cita})" title="Asignar Tratamientos"><i class="bi bi-tools"></i></button>`;
+
             if (c.estado === 'programada') {
                 if (yaPaso) {
-                    // Si ya pasó la hora, le damos prioridad al botón de No Asistió
                     acciones = `
-                        <button class="btn btn-sm btn-outline-danger fw-bold me-1" onclick="cambiarEstado(${c.id_cita}, 'no_asistio')" title="Marcar como No Asistió">
-                            <i class="bi bi-person-x"></i> No asistió
-                        </button>
+                        ${btnTratamientos}
+                        <button class="btn btn-sm btn-outline-danger fw-bold me-1" onclick="cambiarEstado(${c.id_cita}, 'no_asistio')" title="Marcar como No Asistió"><i class="bi bi-person-x"></i></button>
                         <button class="action-btn edit me-1" onclick="cambiarEstado(${c.id_cita}, 'completada')" title="Completar"><i class="bi bi-check-lg"></i></button>
                     `;
                 } else {
-                    // Si aún no es la hora
                     acciones = `
+                        ${btnTratamientos}
                         <button class="action-btn edit me-1" onclick="cambiarEstado(${c.id_cita}, 'completada')" title="Completar"><i class="bi bi-check-lg"></i></button>
                         <button class="action-btn delete" onclick="cambiarEstado(${c.id_cita}, 'cancelada')" title="Cancelar"><i class="bi bi-x-lg"></i></button>
                     `;
                 }
             } else if (c.estado === 'completada') {
                 acciones = `
+                    ${btnTratamientos}
                     <button class="btn btn-sm btn-outline-primary fw-bold" onclick="abrirExpediente(${c.id_cita})">
                         <i class="bi bi-journal-medical"></i> Ficha Clínica
                     </button>
@@ -231,8 +245,6 @@ window.addEventListener('load', function () {
             `;
         }).join('');
     }
-
-    // renderizar tabla de citas
 
     async function cargarOpciones() {
         const r = await fetch('../api/citas_api.php?accion=opciones');
@@ -278,6 +290,54 @@ window.addEventListener('load', function () {
         modalExpediente.show();
     };
 
+    // --- LÓGICA DE TRATAMIENTOS ---
+    window.abrirTratamientos = async function(id_cita) {
+        document.getElementById('trat_id_cita').value = id_cita;
+        document.getElementById('listaTratamientos').innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary spinner-border-sm"></div> Cargando...</div>';
+        modalTratamientos.show();
+
+        const r = await fetch(`../api/citas_api.php?accion=obtener_tratamientos&id_cita=${id_cita}`);
+        const j = await r.json();
+        
+        if (!j.ok) return;
+
+        if (j.tratamientos.length === 0) {
+            document.getElementById('listaTratamientos').innerHTML = '<div class="alert alert-warning">No hay tratamientos registrados en la base de datos.</div>';
+            return;
+        }
+
+        let html = '';
+        j.tratamientos.forEach(t => {
+            const checked = j.asignados.includes(t.id_tratamiento.toString()) ? 'checked' : '';
+            html += `
+                <label class="list-group-item d-flex justify-content-between align-items-center border rounded p-2" style="cursor:pointer;">
+                    <div>
+                        <input class="form-check-input me-2" type="checkbox" name="tratamientos[]" value="${t.id_tratamiento}" ${checked}>
+                        <span class="fw-bold text-dark">${t.nombre}</span>
+                    </div>
+                    <span class="badge bg-success bg-opacity-75">Q ${parseFloat(t.costo).toFixed(2)}</span>
+                </label>
+            `;
+        });
+        document.getElementById('listaTratamientos').innerHTML = html;
+    };
+
+    formTratamientos.addEventListener('submit', async e => {
+        e.preventDefault();
+        const datos = new FormData(formTratamientos);
+        datos.append('accion', 'guardar_tratamientos');
+        
+        const r = await fetch('../api/citas_api.php', { method: 'POST', body: datos });
+        const j = await r.json();
+        
+        if (j.ok) {
+            modalTratamientos.hide();
+            mostrarAlerta(j.mensaje, 'success');
+        } else {
+            mostrarAlerta(j.error, 'danger');
+        }
+    });
+
     formExpediente.addEventListener('submit', async e => {
         e.preventDefault();
         const datos = new FormData(formExpediente);
@@ -304,7 +364,6 @@ window.addEventListener('load', function () {
         else { mostrarAlerta(j.error, 'danger'); }
     });
 
-    // --- Lógica de Búsqueda en vivo ---
     document.getElementById('buscador').addEventListener('input', e => {
         const texto = e.target.value.toLowerCase();
         const filtradas = datosCitasGlobal.filter(c => 

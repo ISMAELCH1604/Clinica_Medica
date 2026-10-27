@@ -127,6 +127,50 @@ try {
             $expediente = $stmt->fetch();
             echo json_encode(['ok' => true, 'expediente' => $expediente ?: null]);
             break;
+        ##
+                // ---- OBTENER LOS TRATAMIENTOS DE UNA CITA ----
+        case 'obtener_tratamientos':
+            $id_cita = (int)$_GET['id_cita'];
+            
+            // Traer todos los tratamientos disponibles para el select
+            $tratamientos = $pdo->query("SELECT id_tratamiento, nombre, costo FROM tratamientos ORDER BY nombre")->fetchAll();
+            
+            // Traer los tratamientos que YA tiene esta cita
+            $stmt = $pdo->prepare("SELECT id_tratamiento FROM detalle_tratamiento_cita WHERE id_cita = ?");
+            $stmt->execute([$id_cita]);
+            $asignados = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+            echo json_encode(['ok' => true, 'tratamientos' => $tratamientos, 'asignados' => $asignados]);
+            break;
+
+        // ---- GUARDAR TRATAMIENTOS EN UNA CITA ----
+        case 'guardar_tratamientos':
+            $id_cita = (int)$_POST['id_cita'];
+            $tratamientos = $_POST['tratamientos'] ?? []; // Array con los IDs
+
+            try {
+                $pdo->beginTransaction();
+
+                // 1. Borrar los tratamientos que tenía (para actualizar)
+                $stmt = $pdo->prepare("DELETE FROM detalle_tratamiento_cita WHERE id_cita = ?");
+                $stmt->execute([$id_cita]);
+
+                // 2. Insertar los nuevos
+                if (!empty($tratamientos)) {
+                    $stmt = $pdo->prepare("INSERT INTO detalle_tratamiento_cita (id_cita, id_tratamiento) VALUES (?, ?)");
+                    foreach ($tratamientos as $id_trat) {
+                        $stmt->execute([$id_cita, (int)$id_trat]);
+                    }
+                }
+
+                $pdo->commit();
+                echo json_encode(['ok' => true, 'mensaje' => 'Tratamientos guardados correctamente']);
+            } catch (PDOException $e) {
+                $pdo->rollBack();
+                echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+            }
+            break;
+        ##
 
         default:
             echo json_encode(['ok' => false, 'error' => 'Acción no válida']);

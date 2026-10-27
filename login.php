@@ -54,6 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         :root {
             --azul-profundo: #0b2a5b;
@@ -306,19 +307,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <aside class="brand-panel" aria-hidden="false">
         <div class="brand-mark">
             <div class="mark-icon">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M12 6.2c-1.3-1.1-2.9-1.7-4.6-1.5C5 4.9 3.5 7 3.8 9.6c.3 2.4 1.4 3.6 1.9 5.6.4 1.6.5 4.2 1.6 4.6 1.3.5 1.8-2.2 2.4-3.6.5-1.2 1.3-1.6 2.3-1.6s1.8.4 2.3 1.6c.6 1.4 1.1 4.1 2.4 3.6 1.1-.4 1.2-3 1.6-4.6.5-2 1.6-3.2 1.9-5.6.3-2.6-1.2-4.7-3.6-4.9-1.7-.2-3.3.4-4.6 1.5Z"/>
-                </svg>
+                <i class="bi bi-heart-pulse" style="font-size: 1.6rem; color: #ffffff;"></i>
             </div>
             <div class="mark-name">
                 Clínica Dental
-                <span>Hospital FAG</span>
+                <!-- <span>Hospital FAG</span> -->
             </div>
         </div>
 
         <div class="brand-message">
-            <h2>Citas y facturación en un solo lugar.</h2>
-            <p>Gestiona la agenda de pacientes y los cobros de la clínica de forma rápida y ordenada.</p>
+            <h2>Sistema de Gestión de Citas y Facturación Clínica Dental</h2>
+            <p>"Cuidamos tu sonrisa, protegemos tu confianza."</p>
         </div>
 
         <div class="brand-foot">Acceso exclusivo para el personal de la clínica</div>
@@ -327,7 +326,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- Panel del formulario -->
     <main class="form-panel">
         <div class="form-wrap">
-            <p class="system-name">Sistema de Gestión de Citas y Facturación Clínica Dental</p>
+            <p class="system-name"></p>
             <h1>Iniciar sesión</h1>
 
             <?php if ($aviso): ?>

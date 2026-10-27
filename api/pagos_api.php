@@ -99,6 +99,34 @@ try {
                 'por_metodo' => $porMetodo
             ]);
             break;
+        
+        // datos impresion de recibos de pagos
+                // ---- DATOS PARA IMPRIMIR RECIBO DE PAGO ----
+        case 'imprimir_recibo':
+            $id = (int)$_GET['id'];
+            
+            $stmt = $pdo->prepare("
+                SELECT p.id_pago, p.monto, p.metodo_pago, p.fecha_pago,
+                       f.id_factura, f.total AS total_factura,
+                       CONCAT(pa.nombre, ' ', pa.apellido) AS paciente, pa.dpi,
+                       (SELECT COALESCE(SUM(monto),0) FROM pagos WHERE id_factura = f.id_factura) AS total_pagado
+                FROM pagos p
+                INNER JOIN facturas f ON f.id_factura = p.id_factura
+                INNER JOIN citas c ON c.id_cita = f.id_cita
+                INNER JOIN pacientes pa ON pa.id_paciente = c.id_paciente
+                WHERE p.id_pago = ?
+            ");
+            $stmt->execute([$id]);
+            $recibo = $stmt->fetch();
+
+            if (!$recibo) {
+                echo json_encode(['ok' => false, 'error' => 'Recibo no encontrado']);
+                break;
+            }
+
+            echo json_encode(['ok' => true, 'recibo' => $recibo]);
+            break;
+        // datos impresion de recibos de pagos
 
         default:
             echo json_encode(['ok' => false, 'error' => 'Acción no válida']);
