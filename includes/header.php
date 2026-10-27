@@ -137,9 +137,9 @@ $nombre = $_SESSION['nombre_usuario'] ?? '';
                 <li class="nav-item"><a class="nav-link" href="pagos.php"><i class="bi bi-cash-coin"></i> Pagos</a></li>
             <?php endif; ?>
 
-            <?php if (in_array($rol, ['administrador', 'auditor'])): ?>
+            <!-- <?php if (in_array($rol, ['administrador', 'auditor'])): ?>
                 <li class="nav-item"><a class="nav-link" href="bitacora.php"><i class="bi bi-shield-check"></i> Auditoría</a></li>
-            <?php endif; ?>
+            <?php endif; ?> -->
 
             <?php if ($rol === 'administrador'): ?>
                 <li class="nav-item"><a class="nav-link" href="usuarios.php"><i class="bi bi-person-gear"></i> Usuarios</a></li>
@@ -171,7 +171,7 @@ $nombre = $_SESSION['nombre_usuario'] ?? '';
         <!-- Navbar superior para móviles -->
         <nav class="navbar navbar-light bg-white rounded shadow-sm m-3 mb-0 d-md-none">
             <div class="container-fluid">
-                <span class="navbar-brand fw-bold text-primary">🦷 Clínica Dental</span>
+                <span class="navbar-brand fw-bold text-primary">Clínica Dental</span>
                 <a href="../logout.php" class="btn btn-outline-danger btn-sm">Salir</a>
             </div>
         </nav>
