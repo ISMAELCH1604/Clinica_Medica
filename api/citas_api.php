@@ -171,6 +171,38 @@ try {
             }
             break;
         ##
+                // ---- OBTENER DISPONIBILIDAD DE HORARIOS ----
+        case 'disponibilidad':
+            $fecha = $_GET['fecha'] ?? date('Y-m-d');
+            $id_consultorio = (int)$_GET['id_consultorio'];
+
+            // 1. Definir los bloques de horario de la clínica (8 AM a 5 PM)
+            $horariosBase = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+            
+            // 2. Buscar las citas ya agendadas para ese consultorio en esa fecha
+            // Usamos TIME_FORMAT para que devuelva solo "HH:MM" y no los segundos
+            $stmt = $pdo->prepare("
+                SELECT TIME_FORMAT(fecha_hora, '%H:%i') AS hora_ocupada 
+                FROM citas 
+                WHERE id_consultorio = ? 
+                  AND DATE(fecha_hora) = ? 
+                  AND estado != 'cancelada'
+            ");
+            $stmt->execute([$id_consultorio, $fecha]);
+            $ocupados = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+            // 3. Armar la respuesta
+            $disponibilidad = [];
+            foreach ($horariosBase as $hora) {
+                $disponibilidad[] = [
+                    'hora' => $hora,
+                    // Si la hora está en la lista de ocupados, disponible = false
+                    'disponible' => !in_array($hora, $ocupados)
+                ];
+            }
+
+            echo json_encode(['ok' => true, 'disponibilidad' => $disponibilidad]);
+            break;
 
         default:
             echo json_encode(['ok' => false, 'error' => 'Acción no válida']);

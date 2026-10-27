@@ -47,6 +47,23 @@ try {
             $datos = $stmt->fetchAll();
             break;
 
+        //Case calendario
+        case 'calendario':
+            $titulo = 'Calendario de Citas Pendientes';
+            $stmt = $pdo->prepare("
+                SELECT c.id_cita, c.fecha_hora, CONCAT(p.nombre,' ',p.apellido) AS paciente,
+                       CONCAT(o.nombre,' ',o.apellido) AS odontologo, c.estado
+                FROM citas c
+                JOIN pacientes p ON p.id_paciente = c.id_paciente
+                JOIN odontologos o ON o.id_odontologo = c.id_odontologo
+                WHERE DATE(c.fecha_hora) BETWEEN ? AND ?
+                  AND c.estado = 'programada'  -- SOLO PROGRAMADAS
+                ORDER BY c.fecha_hora ASC
+            ");
+            $stmt->execute([$desde, $hasta]);
+            $datos = $stmt->fetchAll();
+            break;
+
         case 'pacientes':
             $titulo = 'Reporte de Nuevos Pacientes';
             $stmt = $pdo->prepare("

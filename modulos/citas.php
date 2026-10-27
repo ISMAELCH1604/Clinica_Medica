@@ -11,16 +11,19 @@ require_once '../includes/header.php';
     .action-btn.delete:hover { color: #dc2626; border-color: #fca5a5; background: #fef2f2; }
     .action-btn.view:hover { color: #0d6efd; border-color: #93c5fd; background: #eff6ff; }
     .action-btn.tools:hover { color: #6f42c1; border-color: #d3d0e5; background: #f5f3ff; }
+    
+    .btn-horario { transition: all 0.2s; font-weight: 600; border-radius: 8px;}
+    .btn-horario:hover:not(:disabled) { transform: scale(1.05); }
 </style>
 
-<!-- Cabecera con Buscador -->
+<!-- Cabecera con Buscador y Botones -->
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
     <div>
         <h3 class="fw-bold mb-0 text-dark">Agenda de Citas</h3>
         <p class="text-muted small mb-0">Gestiona las consultas y registra los expedientes clínicos.</p>
     </div>
-    <div class="d-flex gap-2 w-100 w-md-auto">
-        <div class="input-group" style="max-width: 250px;">
+    <div class="d-flex gap-2 w-100 w-md-auto flex-wrap">
+        <div class="input-group" style="max-width: 220px;">
             <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
             <input type="search" id="buscador" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar paciente...">
         </div>
@@ -30,6 +33,9 @@ require_once '../includes/header.php';
             <option value="programadas">Programadas</option>
             <option value="completadas">Completadas</option>
         </select>
+        <button class="btn btn-outline-primary shadow-sm text-nowrap px-3" onclick="abrirDisponibilidad()">
+            <i class="bi bi-calendar3"></i> Disponibilidad
+        </button>
         <button class="btn btn-primary shadow-sm text-nowrap px-3" onclick="nuevaCita()">
             <i class="bi bi-calendar-plus"></i> Agendar
         </button>
@@ -88,6 +94,39 @@ require_once '../includes/header.php';
                     <button type="submit" class="btn btn-primary">Agendar Cita</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Disponibilidad -->
+<div class="modal fade" id="modalDisponibilidad" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-calendar3 text-primary me-2"></i> Panel de Disponibilidad</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted">Seleccionar Fecha</label>
+                        <input type="date" id="dispFecha" class="form-control" value="<?= date('Y-m-d') ?>" onchange="cargarDisponibilidad()">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted">Seleccionar Consultorio</label>
+                        <select id="dispConsultorio" class="form-select" onchange="cargarDisponibilidad()"></select>
+                    </div>
+                </div>
+
+                <h6 class="text-muted small text-uppercase fw-bold mb-3 border-bottom pb-2">Horarios del Día</h6>
+                <div id="gridHorarios" class="row g-2">
+                    <!-- Se llena con JS -->
+                </div>
+                
+                <div class="mt-4 text-muted small">
+                    <i class="bi bi-info-circle me-1"></i> Haz clic en un horario <span class="badge bg-success bg-opacity-25 text-success border border-success-subtle">Verde</span> para agendar una cita en ese espacio.
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -153,6 +192,7 @@ window.addEventListener('load', function () {
     const modalCita = new bootstrap.Modal(document.getElementById('modalCita'));
     const modalExpediente = new bootstrap.Modal(document.getElementById('modalExpediente'));
     const modalTratamientos = new bootstrap.Modal(document.getElementById('modalTratamientos'));
+    const modalDisponibilidad = new bootstrap.Modal(document.getElementById('modalDisponibilidad'));
     
     const formCita  = document.getElementById('formCita');
     const formExpediente  = document.getElementById('formExpediente');
@@ -200,7 +240,6 @@ window.addEventListener('load', function () {
             }[c.estado];
 
             let acciones = '';
-            // BOTÓN DE TRATAMIENTOS (Siempre visible)
             const btnTratamientos = `<button class="action-btn tools me-1" onclick="abrirTratamientos(${c.id_cita})" title="Asignar Tratamientos"><i class="bi bi-tools"></i></button>`;
 
             if (c.estado === 'programada') {
@@ -254,6 +293,8 @@ window.addEventListener('load', function () {
         document.getElementById('selPaciente').innerHTML = '<option value="">— Seleccionar —</option>' + j.pacientes.map(p => `<option value="${p.id}">${escapar(p.nombre)}</option>`).join('');
         document.getElementById('selOdontologo').innerHTML = '<option value="">— Seleccionar —</option>' + j.odontologos.map(o => `<option value="${o.id}">${escapar(o.nombre)}</option>`).join('');
         document.getElementById('selConsultorio').innerHTML = '<option value="">— Seleccionar —</option>' + j.consultorios.map(c => `<option value="${c.id}">${escapar(c.nombre)}</option>`).join('');
+        
+        return j;
     }
 
     window.nuevaCita = function () {
@@ -290,7 +331,6 @@ window.addEventListener('load', function () {
         modalExpediente.show();
     };
 
-    // --- LÓGICA DE TRATAMIENTOS ---
     window.abrirTratamientos = async function(id_cita) {
         document.getElementById('trat_id_cita').value = id_cita;
         document.getElementById('listaTratamientos').innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary spinner-border-sm"></div> Cargando...</div>';
@@ -320,6 +360,72 @@ window.addEventListener('load', function () {
             `;
         });
         document.getElementById('listaTratamientos').innerHTML = html;
+    };
+
+    // --- LÓGICA DE DISPONIBILIDAD ---
+    window.abrirDisponibilidad = async function() {
+        const j = await cargarOpciones(); // Aprovechamos para llenar el select de consultorios
+        if(j && j.ok) {
+            document.getElementById('dispConsultorio').innerHTML = j.consultorios.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+        }
+        modalDisponibilidad.show();
+        cargarDisponibilidad();
+    };
+
+    window.cargarDisponibilidad = async function() {
+        const fecha = document.getElementById('dispFecha').value;
+        const consultorio = document.getElementById('dispConsultorio').value;
+        const grid = document.getElementById('gridHorarios');
+        
+        if(!fecha || !consultorio) return;
+        
+        grid.innerHTML = '<div class="col-12 text-center py-3"><div class="spinner-border text-primary spinner-border-sm"></div> Buscando horarios...</div>';
+
+        const r = await fetch(`../api/citas_api.php?accion=disponibilidad&fecha=${fecha}&id_consultorio=${consultorio}`);
+        const j = await r.json();
+        
+        if (!j.ok) return;
+
+        grid.innerHTML = j.disponibilidad.map(h => {
+            let [hour, minute] = h.hora.split(':');
+            let ampm = hour >= 12 ? 'PM' : 'AM';
+            hour = hour % 12 || 12;
+            let horaBonita = `${hour}:${minute} ${ampm}`;
+
+            if (h.disponible) {
+                return `
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-outline-success btn-horario w-100 py-3" onclick="agendarDesdeGrid('${h.hora}')">
+                            <i class="bi bi-clock d-block mb-1 fs-5"></i>
+                            ${horaBonita}
+                        </button>
+                    </div>`;
+            } else {
+                return `
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-light border w-100 py-3 text-muted" disabled>
+                            <i class="bi bi-x-circle d-block mb-1 fs-5 text-danger"></i>
+                            ${horaBonita}
+                        </button>
+                    </div>`;
+            }
+        }).join('');
+    };
+
+    window.agendarDesdeGrid = async function(hora) {
+        const fecha = document.getElementById('dispFecha').value;
+        const consultorio = document.getElementById('dispConsultorio').value;
+        
+        modalDisponibilidad.hide();
+        formCita.reset();
+        
+        await cargarOpciones(); // Asegurar que los selects estén llenos
+        
+        // Autocompletar los campos
+        document.getElementById('selConsultorio').value = consultorio;
+        document.getElementById('fecha_hora').value = `${fecha}T${hora}`;
+        
+        modalCita.show();
     };
 
     formTratamientos.addEventListener('submit', async e => {
