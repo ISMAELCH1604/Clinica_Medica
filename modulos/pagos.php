@@ -4,69 +4,84 @@ requerirRol(['administrador', 'recepcion']);
 require_once '../includes/header.php';
 ?>
 
+<!-- estilos de iconos -->
+<style>
+    .metodo-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        color: #495057;
+    }
+    .metodo-badge i {
+        font-size: 1rem;
+    }
+    .metodo-efectivo i { color: #198754; } /* Verde */
+    .metodo-tarjeta i { color: #0d6efd; } /* Azul */
+    .metodo-transferencia i { color: #6f42c1; } /* Morado */
+</style>
+<!-- estilos de iconos -->
 
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h2 class="mb-0">Pagos</h2>
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+        <h3 class="fw-bold mb-0 text-dark">Registro de Pagos</h3>
+        <p class="text-muted small mb-0">Administra los abonos y pagos totales de las facturas.</p>
+    </div>
     <div class="d-flex gap-2">
-        <select id="filtro" class="form-select" style="min-width: 150px;">
-            <option value="todos">Todos</option>
-            <option value="hoy">Hoy</option>
-            <option value="mes">Este mes</option>
+        <select id="filtro" class="form-select shadow-sm" style="width: auto;">
+            <option value="todos">Historial Completo</option>
+            <option value="hoy">Cobros de Hoy</option>
+            <option value="mes">Este Mes</option>
         </select>
-        <button class="btn btn-success text-nowrap" onclick="nuevoPago()">
-            <i class="bi bi-cash-coin"></i> Registrar pago
+        <button class="btn btn-primary shadow-sm px-3" onclick="nuevoPago()">
+            <i class="bi bi-cash-coin"></i> Registrar Pago
         </button>
     </div>
 </div>
 
-<!-- Resumen -->
-<div class="row g-3 mb-3">
+<!-- Resumen Financiero -->
+<div class="row g-3 mb-4">
     <div class="col-12 col-md-4">
-        <div class="card border-success">
-            <div class="card-body py-3">
-                <div class="text-muted small">Cobrado hoy</div>
-                <div class="h4 mb-0 text-success" id="cobradoHoy">Q 0.00</div>
-            </div>
+        <div class="card border-0 shadow-sm p-3">
+            <div class="text-muted small text-uppercase fw-bold mb-1">Cobrado Hoy</div>
+            <div class="h4 mb-0 fw-bold text-success" id="cobradoHoy">Q 0.00</div>
         </div>
     </div>
     <div class="col-12 col-md-4">
-        <div class="card border-info">
-            <div class="card-body py-3">
-                <div class="text-muted small">Cobrado este mes</div>
-                <div class="h4 mb-0" id="cobradoMes">Q 0.00</div>
-            </div>
+        <div class="card border-0 shadow-sm p-3">
+            <div class="text-muted small text-uppercase fw-bold mb-1">Cobrado Este Mes</div>
+            <div class="h4 mb-0 fw-bold text-dark" id="cobradoMes">Q 0.00</div>
         </div>
     </div>
     <div class="col-12 col-md-4">
-        <div class="card border-primary">
-            <div class="card-body py-3">
-                <div class="text-muted small">Total histórico</div>
-                <div class="h4 mb-0" id="cobradoTotal">Q 0.00</div>
-            </div>
+        <div class="card border-0 shadow-sm p-3">
+            <div class="text-muted small text-uppercase fw-bold mb-1">Total Histórico</div>
+            <div class="h4 mb-0 fw-bold text-primary" id="cobradoTotal">Q 0.00</div>
         </div>
     </div>
 </div>
 
-<!-- Métodos de pago -->
-<div class="row g-3 mb-3" id="tarjetasMetodos">
-    <!-- se llena dinámicamente -->
-</div>
-
-<div class="card shadow-sm">
+<!-- Tabla de Pagos -->
+<div class="card border-0 shadow-sm">
     <div class="table-responsive">
-        <table class="table table-hover mb-0 align-middle">
-            <thead class="table-light">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light text-muted small text-uppercase">
                 <tr>
-                    <th>#</th>
-                    <th>Fecha</th>
-                    <th>Paciente</th>
-                    <th class="d-none d-md-table-cell">Factura</th>
-                    <th>Método</th>
-                    <th class="text-end">Monto</th>
+                    <th class="ps-4 py-3 border-0">Recibo #</th>
+                    <th class="py-3 border-0">Paciente</th>
+                    <th class="py-3 border-0">Fecha de Pago</th>
+                    <th class="py-3 border-0">Método</th>
+                    <th class="py-3 border-0 text-end pe-4">Monto</th>
                 </tr>
             </thead>
             <tbody id="tablaPagos">
-                <tr><td colspan="6" class="text-center py-4">Cargando...</td></tr>
+                <tr><td colspan="5" class="text-center py-5 text-muted">Cargando recibos...</td></tr>
             </tbody>
         </table>
     </div>
@@ -74,42 +89,40 @@ require_once '../includes/header.php';
 
 <!-- Modal Registrar Pago -->
 <div class="modal fade" id="modalPago" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
             <form id="formPago">
-                <div class="modal-header">
-                    <h5 class="modal-title">Registrar pago</h5>
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Registrar Pago</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Factura *</label>
+                        <label class="form-label small fw-bold text-muted">Factura Pendiente</label>
                         <select name="id_factura" id="selFactura" class="form-select" required>
-                            <option value="">— Seleccionar —</option>
+                            <option value="">— Seleccionar Factura —</option>
                         </select>
-                        <div id="infoFactura" class="form-text"></div>
+                        <div id="infoFactura" class="mt-2 text-muted small"></div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Monto *</label>
+                        <label class="form-label small fw-bold text-muted">Monto a Cobrar</label>
                         <div class="input-group">
-                            <span class="input-group-text">Q</span>
-                            <input type="number" name="monto" id="monto" class="form-control"
-                                   step="0.01" min="0.01" required>
+                            <span class="input-group-text bg-light">Q</span>
+                            <input type="number" name="monto" id="monto" class="form-control" step="0.01" min="0.01" required placeholder="0.00">
                         </div>
-                        <div class="form-text" id="ayudaMonto"></div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Método de pago *</label>
+                        <label class="form-label small fw-bold text-muted">Método de Pago</label>
                         <select name="metodo_pago" class="form-select" required>
                             <option value="efectivo">Efectivo</option>
-                            <option value="tarjeta">Tarjeta</option>
-                            <option value="transferencia">Transferencia</option>
+                            <option value="tarjeta">Tarjeta de Crédito/Débito</option>
+                            <option value="transferencia">Transferencia Bancaria</option>
                         </select>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-success">Registrar pago</button>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success px-4">Registrar Pago</button>
                 </div>
             </form>
         </div>
@@ -126,11 +139,10 @@ window.addEventListener('load', function () {
     const form  = document.getElementById('formPago');
     let facturasPendientes = [];
 
-    // ---- Cargar pagos ----
     async function cargarPagos() {
         const filtro = document.getElementById('filtro').value;
         const tbody  = document.getElementById('tablaPagos');
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Cargando...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">Cargando...</td></tr>';
 
         try {
             const r = await fetch(`../api/pagos_api.php?accion=listar&filtro=${filtro}`);
@@ -138,54 +150,60 @@ window.addEventListener('load', function () {
             if (!j.ok) throw new Error(j.error);
 
             if (j.datos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Sin pagos</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">No hay pagos registrados.</td></tr>';
                 return;
             }
 
-            const iconos = { efectivo: '💵', tarjeta: '💳', transferencia: '🏦' };
+            
+            //
+                        tbody.innerHTML = j.datos.map(p => {
+                // Diccionario de iconos profesionales
+                let iconoMetodo = '';
+                let claseColor = '';
+                let textoMetodo = p.metodo_pago;
 
-            tbody.innerHTML = j.datos.map(p => `
+                if (p.metodo_pago === 'efectivo') {
+                    iconoMetodo = '<i class="bi bi-cash-stack"></i>';
+                    claseColor = 'metodo-efectivo';
+                } else if (p.metodo_pago === 'tarjeta') {
+                    iconoMetodo = '<i class="bi bi-credit-card"></i>';
+                    claseColor = 'metodo-tarjeta';
+                    textoMetodo = 'Tarjeta';
+                } else if (p.metodo_pago === 'transferencia') {
+                    iconoMetodo = '<i class="bi bi-bank"></i>';
+                    claseColor = 'metodo-transferencia';
+                    textoMetodo = 'Transferencia';
+                }
+
+                return `
                 <tr>
-                    <td>${p.id_pago}</td>
-                    <td>${formatearFecha(p.fecha_pago)}</td>
-                    <td>${escapar(p.paciente)}</td>
-                    <td class="d-none d-md-table-cell">#${p.id_factura}</td>
-                    <td>${iconos[p.metodo_pago] || ''} ${p.metodo_pago}</td>
-                    <td class="text-end text-success fw-bold">Q ${parseFloat(p.monto).toFixed(2)}</td>
+                    <td class="ps-4 text-muted fw-bold">#${p.id_pago}</td>
+                    <td class="fw-bold text-dark">${escapar(p.paciente)}</td>
+                    <td class="text-muted">${formatearFecha(p.fecha_pago)}</td>
+                    <td>
+                        <span class="metodo-badge ${claseColor}">
+                            ${iconoMetodo} ${textoMetodo.charAt(0).toUpperCase() + textoMetodo.slice(1)}
+                        </span>
+                    </td>
+                    <td class="text-end pe-4 fw-bold text-success">+ Q ${parseFloat(p.monto).toFixed(2)}</td>
                 </tr>
-            `).join('');
+            `}).join('');
+
+            //
         } catch (e) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-danger">Error: ${e.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-danger">Error: ${e.message}</td></tr>`;
         }
     }
 
-    // ---- Cargar resumen ----
     async function cargarResumen() {
         const r = await fetch('../api/pagos_api.php?accion=resumen');
         const j = await r.json();
         if (!j.ok) return;
-
         document.getElementById('cobradoHoy').textContent   = 'Q ' + parseFloat(j.hoy).toFixed(2);
         document.getElementById('cobradoMes').textContent   = 'Q ' + parseFloat(j.mes).toFixed(2);
         document.getElementById('cobradoTotal').textContent = 'Q ' + parseFloat(j.total).toFixed(2);
-
-        const iconos = { efectivo: '💵', tarjeta: '💳', transferencia: '🏦' };
-        document.getElementById('tarjetasMetodos').innerHTML = j.por_metodo.map(m => `
-            <div class="col-12 col-md-4">
-                <div class="card">
-                    <div class="card-body py-3 d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="text-muted small">${iconos[m.metodo_pago] || ''} ${m.metodo_pago}</div>
-                            <div class="h5 mb-0">Q ${parseFloat(m.total).toFixed(2)}</div>
-                        </div>
-                        <span class="badge bg-secondary">${m.cantidad} pago(s)</span>
-                    </div>
-                </div>
-            </div>
-        `).join('');
     }
 
-    // ---- Cargar facturas pendientes ----
     async function cargarFacturasPendientes() {
         const r = await fetch('../api/pagos_api.php?accion=facturas_pendientes');
         const j = await r.json();
@@ -193,64 +211,47 @@ window.addEventListener('load', function () {
 
         facturasPendientes = j.datos;
         const sel = document.getElementById('selFactura');
-        sel.innerHTML = '<option value="">— Seleccionar —</option>' +
-            j.datos.map(f => `
-                <option value="${f.id_factura}" data-saldo="${f.saldo}">
-                    #${f.id_factura} — ${escapar(f.paciente)} — Saldo: Q ${parseFloat(f.saldo).toFixed(2)}
-                </option>
-            `).join('');
+        sel.innerHTML = '<option value="">— Seleccionar Factura —</option>' +
+            j.datos.map(f => `<option value="${f.id_factura}" data-saldo="${f.saldo}">#${f.id_factura} - ${escapar(f.paciente)} (Saldo: Q${parseFloat(f.saldo).toFixed(2)})</option>`).join('');
     }
 
-    // ---- Exponer globales ----
     window.nuevoPago = async function () {
         form.reset();
-        document.getElementById('infoFactura').textContent = '';
-        document.getElementById('ayudaMonto').textContent = '';
+        document.getElementById('infoFactura').innerHTML = '';
         await cargarFacturasPendientes();
         modal.show();
     };
 
-    // ---- Mostrar info de la factura al seleccionarla ----
     document.getElementById('selFactura').addEventListener('change', e => {
         const id = e.target.value;
-        if (!id) {
-            document.getElementById('infoFactura').textContent = '';
-            document.getElementById('ayudaMonto').textContent = '';
-            return;
-        }
+        if (!id) { document.getElementById('infoFactura').innerHTML = ''; return; }
         const f = facturasPendientes.find(x => x.id_factura == id);
         if (f) {
-            document.getElementById('infoFactura').innerHTML =
-                `Total: <strong>Q ${parseFloat(f.total).toFixed(2)}</strong> · 
-                 Pagado: Q ${parseFloat(f.pagado).toFixed(2)} · 
-                 <span class="text-danger fw-bold">Saldo: Q ${parseFloat(f.saldo).toFixed(2)}</span>`;
+            document.getElementById('infoFactura').innerHTML = `
+                <div class="bg-light p-2 rounded border">
+                    <div class="d-flex justify-content-between"><span>Total:</span> <strong>Q ${parseFloat(f.total).toFixed(2)}</strong></div>
+                    <div class="d-flex justify-content-between text-danger"><span>Saldo pendiente:</span> <strong>Q ${parseFloat(f.saldo).toFixed(2)}</strong></div>
+                </div>`;
             document.getElementById('monto').max = f.saldo;
-            document.getElementById('ayudaMonto').innerHTML =
-                `Máximo permitido: <strong>Q ${parseFloat(f.saldo).toFixed(2)}</strong>`;
+            document.getElementById('monto').value = f.saldo; // Autocompletar con el saldo exacto
         }
     });
 
-    // ---- Guardar ----
     form.addEventListener('submit', async e => {
         e.preventDefault();
         const datos = new FormData(form);
         datos.append('accion', 'registrar');
-
         const btn = form.querySelector('button[type="submit"]');
         btn.disabled = true;
-        btn.textContent = 'Procesando...';
 
         const r = await fetch('../api/pagos_api.php', { method: 'POST', body: datos });
         const j = await r.json();
-
+        
         btn.disabled = false;
-        btn.textContent = 'Registrar pago';
 
         if (j.ok) {
             modal.hide();
-            const msg = parseFloat(j.saldo_restante) === 0
-                ? '✅ Pago completo. La factura quedó como PAGADA.'
-                : `Pago registrado. Saldo restante: Q ${parseFloat(j.saldo_restante).toFixed(2)}`;
+            const msg = parseFloat(j.saldo_restante) === 0 ? '✅ ¡Pago completo! La factura ha sido liquidada.' : `Pago registrado. Saldo restante: Q ${parseFloat(j.saldo_restante).toFixed(2)}`;
             mostrarAlerta(msg, 'success');
             cargarPagos();
             cargarResumen();
@@ -259,36 +260,12 @@ window.addEventListener('load', function () {
         }
     });
 
-    // ---- Filtro ----
     document.getElementById('filtro').addEventListener('change', cargarPagos);
 
-    // ---- Utilidades ----
-    function escapar(s) {
-        if (s == null) return '';
-        return String(s).replace(/[&<>"']/g, c => ({
-            '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-        }[c]));
-    }
+    function escapar(s) { if (s == null) return ''; return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+    function formatearFecha(f) { const d = new Date(f.replace(' ', 'T')); return d.toLocaleString('es-GT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+    function mostrarAlerta(msg, tipo) { const id = 'al-' + Date.now(); document.getElementById('alertas').insertAdjacentHTML('beforeend', `<div id="${id}" class="alert alert-${tipo} alert-dismissible fade show shadow-sm" role="alert" style="border-radius: 10px;">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`); setTimeout(() => document.getElementById(id)?.remove(), 3500); }
 
-    function formatearFecha(f) {
-        const d = new Date(f.replace(' ', 'T'));
-        return d.toLocaleString('es-GT', {
-            day: '2-digit', month: 'short', year: 'numeric',
-            hour: '2-digit', minute: '2-digit'
-        });
-    }
-
-    function mostrarAlerta(msg, tipo) {
-        const id = 'al-' + Date.now();
-        document.getElementById('alertas').insertAdjacentHTML('beforeend', `
-            <div id="${id}" class="alert alert-${tipo} alert-dismissible fade show shadow">
-                ${msg}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>`);
-        setTimeout(() => document.getElementById(id)?.remove(), 5000);
-    }
-
-    // ---- Carga inicial ----
     cargarPagos();
     cargarResumen();
 });

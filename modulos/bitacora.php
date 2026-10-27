@@ -1,112 +1,113 @@
 <?php
 require_once '../includes/seguridad.php';
-requerirRol(['administrador', 'auditor']); // Solo admin y auditor
+requerirRol(['administrador', 'auditor']);
 require_once '../includes/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h2 class="mb-0">🔍 Bitácora de auditoría</h2>
+<style>
+    /* Estilos del modal de diferencias */
+    .diff-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+    @media (max-width: 768px) { .diff-container { grid-template-columns: 1fr; } }
+    .diff-panel { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: #fff; }
+    .diff-panel-header { background: #f8f9fa; padding: 10px 15px; font-weight: 600; border-bottom: 1px solid #e5e7eb; font-size: 0.85rem; color: #4b5563; text-transform: uppercase; letter-spacing: 0.5px; }
+    .diff-panel-body { padding: 15px; font-family: 'Consolas', monospace; font-size: 0.85rem; }
+    .diff-line { padding: 6px 10px; border-radius: 4px; margin-bottom: 4px; border: 1px solid transparent; }
+    .diff-line.nuevo { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+    .diff-line.eliminado { background: #fef2f2; border-color: #fecaca; color: #991b1b; text-decoration: line-through; opacity: 0.8; }
+    .diff-campo { font-weight: 700; margin-right: 5px; color: #374151; }
+</style>
+
+<!-- Encabezado -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+        <h3 class="fw-bold mb-0 text-dark">Auditoría del Sistema</h3>
+        <p class="text-muted small mb-0">Registro histórico e inmutable de todas las operaciones realizadas.</p>
+    </div>
     <div class="d-flex gap-2">
-        <a href="../api/bitacora_api.php?accion=exportar_csv" class="btn btn-outline-success text-nowrap">
-            <i class="bi bi-download"></i> Exportar CSV
-        </a>
-        <button class="btn btn-outline-secondary text-nowrap" onclick="recargar()">
-            <i class="bi bi-arrow-clockwise"></i> Refrescar
+        <button class="btn btn-outline-success shadow-sm px-3" onclick="window.location.href='../api/bitacora_api.php?accion=exportar_excel'">
+            <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+        </button>
+        <button class="btn btn-light border shadow-sm" onclick="recargar()">
+            <i class="bi bi-arrow-clockwise"></i>
         </button>
     </div>
 </div>
 
-<!-- Estadísticas -->
-<div class="row g-3 mb-3">
+<!-- Resumen -->
+<div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
-        <div class="card border-primary shadow-sm">
-            <div class="card-body py-3">
-                <div class="text-muted small">Total registros</div>
-                <div class="h4 mb-0" id="statTotal">0</div>
-            </div>
+        <div class="card border-0 shadow-sm p-3 h-100">
+            <div class="text-muted small text-uppercase fw-bold mb-1">Total Registros</div>
+            <div class="h4 mb-0 fw-bold" id="statTotal">0</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card border-info shadow-sm">
-            <div class="card-body py-3">
-                <div class="text-muted small">Actividad hoy</div>
-                <div class="h4 mb-0" id="statHoy">0</div>
-            </div>
+        <div class="card border-0 shadow-sm p-3 h-100">
+            <div class="text-muted small text-uppercase fw-bold mb-1">Actividad Hoy</div>
+            <div class="h4 mb-0 fw-bold text-primary" id="statHoy">0</div>
         </div>
     </div>
     <div class="col-12 col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-body py-3">
-                <div class="text-muted small mb-1">Por operación</div>
-                <div id="statOperaciones" class="d-flex gap-3 flex-wrap"></div>
-            </div>
+        <div class="card border-0 shadow-sm p-3 h-100">
+            <div class="text-muted small text-uppercase fw-bold mb-2">Acciones Registradas</div>
+            <div id="statOperaciones" class="d-flex gap-2 flex-wrap"></div>
         </div>
     </div>
 </div>
 
 <!-- Filtros -->
-<div class="card shadow-sm mb-3">
+<div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
         <div class="row g-2 align-items-end">
             <div class="col-12 col-md-3">
-                <label class="form-label small mb-1">Usuario</label>
-                <select id="filtroUsuario" class="form-select form-select-sm">
-                    <option value="">Todos</option>
-                </select>
+                <label class="form-label small fw-bold text-muted mb-1">Usuario</label>
+                <select id="filtroUsuario" class="form-select form-select-sm"></select>
             </div>
             <div class="col-12 col-md-3">
-                <label class="form-label small mb-1">Tabla</label>
-                <select id="filtroTabla" class="form-select form-select-sm">
-                    <option value="">Todas</option>
-                </select>
+                <label class="form-label small fw-bold text-muted mb-1">Tabla Afectada</label>
+                <select id="filtroTabla" class="form-select form-select-sm"></select>
             </div>
-            <div class="col-6 col-md-2">
-                <label class="form-label small mb-1">Operación</label>
+            <div class="col-12 col-md-2">
+                <label class="form-label small fw-bold text-muted mb-1">Acción</label>
                 <select id="filtroOperacion" class="form-select form-select-sm">
                     <option value="">Todas</option>
-                    <option value="INSERT">INSERT</option>
-                    <option value="UPDATE">UPDATE</option>
-                    <option value="DELETE">DELETE</option>
+                    <option value="INSERT">Creación</option>
+                    <option value="UPDATE">Actualización</option>
+                    <option value="DELETE">Eliminación</option>
                 </select>
             </div>
             <div class="col-6 col-md-2">
-                <label class="form-label small mb-1">Desde</label>
+                <label class="form-label small fw-bold text-muted mb-1">Desde</label>
                 <input type="date" id="filtroDesde" class="form-control form-control-sm">
             </div>
             <div class="col-6 col-md-2">
-                <label class="form-label small mb-1">Hasta</label>
+                <label class="form-label small fw-bold text-muted mb-1">Hasta</label>
                 <input type="date" id="filtroHasta" class="form-control form-control-sm">
             </div>
-            <div class="col-6 col-md-2">
-                <button class="btn btn-primary btn-sm w-100" onclick="aplicarFiltros()">
-                    <i class="bi bi-funnel"></i> Filtrar
-                </button>
-            </div>
-            <div class="col-6 col-md-2">
-                <button class="btn btn-outline-secondary btn-sm w-100" onclick="limpiarFiltros()">
-                    Limpiar
-                </button>
+            <div class="col-12 mt-3 text-end">
+                <button class="btn btn-primary btn-sm px-4" onclick="aplicarFiltros()">Buscar</button>
+                <button class="btn btn-light btn-sm px-3" onclick="limpiarFiltros()">Limpiar</button>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Tabla -->
-<div class="card shadow-sm">
+<div class="card border-0 shadow-sm">
     <div class="table-responsive">
-        <table class="table table-hover mb-0 align-middle">
-            <thead class="table-light">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light text-muted small text-uppercase">
                 <tr>
-                    <th>#</th>
-                    <th>Fecha y hora</th>
-                    <th>Usuario</th>
-                    <th>Tabla</th>
-                    <th>Operación</th>
-                    <th class="text-end">Detalle</th>
+                    <th class="ps-4 py-3 border-0">ID</th>
+                    <th class="py-3 border-0">Fecha</th>
+                    <th class="py-3 border-0">Usuario</th>
+                    <th class="py-3 border-0">Módulo (Tabla)</th>
+                    <th class="py-3 border-0">Acción</th>
+                    <th class="text-end pe-4 py-3 border-0">Detalle</th>
                 </tr>
             </thead>
             <tbody id="tablaBitacora">
-                <tr><td colspan="6" class="text-center py-4">Cargando...</td></tr>
+                <tr><td colspan="6" class="text-center py-5 text-muted">Cargando historial...</td></tr>
             </tbody>
         </table>
     </div>
@@ -114,84 +115,29 @@ require_once '../includes/header.php';
 
 <!-- Modal Detalle -->
 <div class="modal fade" id="modalDetalle" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Detalle del cambio <span id="detId"></span></h5>
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Detalle de la Operación</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <p class="mb-1"><strong>Usuario:</strong> <span id="detUsuario"></span></p>
-                        <p class="mb-1"><strong>Tabla:</strong> <span id="detTabla"></span></p>
-                    </div>
-                    <div class="col-md-6">
-                        <p class="mb-1"><strong>Fecha:</strong> <span id="detFecha"></span></p>
-                        <p class="mb-1"><strong>Operación:</strong> <span id="detOperacion"></span></p>
+                <div class="bg-light p-3 rounded mb-3 border">
+                    <div class="row g-2">
+                        <div class="col-sm-6"><strong>Usuario:</strong> <span id="detUsuario"></span></div>
+                        <div class="col-sm-6"><strong>Fecha:</strong> <span id="detFecha"></span></div>
+                        <div class="col-sm-6"><strong>Tabla afectada:</strong> <span id="detTabla" class="badge bg-secondary"></span></div>
+                        <div class="col-sm-6"><strong>Acción:</strong> <span id="detOperacion"></span></div>
                     </div>
                 </div>
 
-                <div id="zonaDiff">
-                    <!-- se llena dinámicamente -->
-                </div>
+                <div id="zonaDiff"></div>
             </div>
         </div>
     </div>
 </div>
 
 <div id="alertas" class="position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
-
-<style>
-.diff-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-}
-@media (max-width: 768px) {
-    .diff-container { grid-template-columns: 1fr; }
-}
-.diff-panel {
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    overflow: hidden;
-}
-.diff-panel-header {
-    background: #f8f9fa;
-    padding: 8px 12px;
-    font-weight: 600;
-    border-bottom: 1px solid #dee2e6;
-    font-size: 0.9rem;
-}
-.diff-panel-body {
-    padding: 12px;
-    font-family: monospace;
-    font-size: 0.85rem;
-}
-.diff-line {
-    padding: 3px 6px;
-    border-radius: 3px;
-    margin-bottom: 2px;
-}
-.diff-line.cambiado {
-    background: #fff3cd;
-    border-left: 3px solid #ffc107;
-}
-.diff-line.nuevo {
-    background: #d4edda;
-    border-left: 3px solid #28a745;
-}
-.diff-line.eliminado {
-    background: #f8d7da;
-    border-left: 3px solid #dc3545;
-    text-decoration: line-through;
-    opacity: 0.7;
-}
-.diff-campo {
-    color: #0d6efd;
-    font-weight: 600;
-}
-</style>
 
 <script>
 window.addEventListener('load', function () {
@@ -200,22 +146,20 @@ window.addEventListener('load', function () {
     const modalDetalle = new bootstrap.Modal(document.getElementById('modalDetalle'));
     let datosActuales = [];
 
-    // ---- Cargar opciones de filtros ----
+    // Diccionarios de traducción
+    const traducirAccion = { 'INSERT': 'CREACIÓN', 'UPDATE': 'ACTUALIZACIÓN', 'DELETE': 'ELIMINACIÓN' };
+    const colorAccion = { 'INSERT': 'success', 'UPDATE': 'warning text-dark', 'DELETE': 'danger' };
+    const iconoAccion = { 'INSERT': 'bi-plus-circle', 'UPDATE': 'bi-pencil-square', 'DELETE': 'bi-trash' };
+
     async function cargarOpciones() {
         const r = await fetch('../api/bitacora_api.php?accion=opciones');
         const j = await r.json();
         if (!j.ok) return;
 
-        document.getElementById('filtroUsuario').innerHTML =
-            '<option value="">Todos</option>' +
-            j.usuarios.map(u => `<option value="${u.id_usuario}">${escapar(u.nombre_usuario)} (${u.rol})</option>`).join('');
-
-        document.getElementById('filtroTabla').innerHTML =
-            '<option value="">Todas</option>' +
-            j.tablas.map(t => `<option value="${escapar(t)}">${escapar(t)}</option>`).join('');
+        document.getElementById('filtroUsuario').innerHTML = '<option value="">Todos</option>' + j.usuarios.map(u => `<option value="${u.id_usuario}">${escapar(u.nombre_usuario)} (${u.rol})</option>`).join('');
+        document.getElementById('filtroTabla').innerHTML = '<option value="">Todas</option>' + j.tablas.map(t => `<option value="${escapar(t)}">${escapar(t)}</option>`).join('');
     }
 
-    // ---- Cargar estadísticas ----
     async function cargarEstadisticas() {
         const r = await fetch('../api/bitacora_api.php?accion=estadisticas');
         const j = await r.json();
@@ -224,20 +168,16 @@ window.addEventListener('load', function () {
         document.getElementById('statTotal').textContent = j.total;
         document.getElementById('statHoy').textContent = j.hoy;
 
-        const colores = { INSERT: 'success', UPDATE: 'warning', DELETE: 'danger' };
-        const iconos  = { INSERT: '➕', UPDATE: '✏️', DELETE: '🗑️' };
-
         document.getElementById('statOperaciones').innerHTML = j.por_operacion.map(o => `
-            <span class="badge bg-${colores[o.operacion] || 'secondary'}">
-                ${iconos[o.operacion] || ''} ${o.operacion}: ${o.total}
+            <span class="badge bg-${colorAccion[o.operacion]} rounded-pill px-3 py-2">
+                <i class="bi ${iconoAccion[o.operacion]} me-1"></i> ${traducirAccion[o.operacion]}: ${o.total}
             </span>
         `).join('');
     }
 
-    // ---- Cargar bitácora ----
     async function cargarBitacora() {
         const tbody = document.getElementById('tablaBitacora');
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Cargando...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">Buscando...</td></tr>';
 
         const params = new URLSearchParams({
             accion: 'listar',
@@ -256,29 +196,26 @@ window.addEventListener('load', function () {
             datosActuales = j.datos;
 
             if (j.datos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Sin registros con esos filtros</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">No hay registros que coincidan con la búsqueda.</td></tr>';
                 return;
             }
 
-            const colores = { INSERT: 'success', UPDATE: 'warning text-dark', DELETE: 'danger' };
-            const iconos  = { INSERT: '➕', UPDATE: '✏️', DELETE: '🗑️' };
-
             tbody.innerHTML = j.datos.map(b => `
                 <tr>
-                    <td>${b.id_bitacora}</td>
-                    <td>${formatearFecha(b.fecha_hora)}</td>
+                    <td class="ps-4 text-muted fw-bold">#${b.id_bitacora}</td>
+                    <td class="text-muted">${formatearFecha(b.fecha_hora)}</td>
                     <td>
-                        <strong>${escapar(b.usuario)}</strong><br>
-                        <small class="text-muted">${escapar(b.rol || '')}</small>
+                        <div class="fw-bold text-dark">${escapar(b.usuario)}</div>
+                        <div class="text-muted small">${escapar(b.rol || '')}</div>
                     </td>
-                    <td><span class="badge bg-secondary">${escapar(b.tabla_afectada)}</span></td>
+                    <td><span class="badge bg-light text-dark border">${escapar(b.tabla_afectada)}</span></td>
                     <td>
-                        <span class="badge bg-${colores[b.operacion] || 'secondary'}">
-                            ${iconos[b.operacion] || ''} ${b.operacion}
+                        <span class="badge bg-${colorAccion[b.operacion]} rounded-pill px-2">
+                            <i class="bi ${iconoAccion[b.operacion]} me-1"></i>${traducirAccion[b.operacion]}
                         </span>
                     </td>
-                    <td class="text-end">
-                        <button class="btn btn-sm btn-outline-primary" onclick="verDetalle(${b.id_bitacora})">
+                    <td class="text-end pe-4">
+                        <button class="btn btn-sm btn-outline-secondary border-0" onclick="verDetalle(${b.id_bitacora})" title="Ver cambio">
                             <i class="bi bi-eye"></i>
                         </button>
                     </td>
@@ -289,19 +226,14 @@ window.addEventListener('load', function () {
         }
     }
 
-    // ---- Ver detalle con diff ----
     window.verDetalle = function (id) {
         const b = datosActuales.find(x => x.id_bitacora == id);
         if (!b) return;
 
-        document.getElementById('detId').textContent = '#' + b.id_bitacora;
         document.getElementById('detUsuario').textContent = b.usuario + (b.rol ? ' (' + b.rol + ')' : '');
         document.getElementById('detTabla').textContent = b.tabla_afectada;
         document.getElementById('detFecha').textContent = formatearFecha(b.fecha_hora);
-
-        const colores = { INSERT: 'success', UPDATE: 'warning', DELETE: 'danger' };
-        document.getElementById('detOperacion').innerHTML =
-            `<span class="badge bg-${colores[b.operacion]}">${b.operacion}</span>`;
+        document.getElementById('detOperacion').innerHTML = `<span class="badge bg-${colorAccion[b.operacion]}">${traducirAccion[b.operacion]}</span>`;
 
         const anterior = parseJSON(b.valor_anterior);
         const nuevo    = parseJSON(b.valor_nuevo);
@@ -309,38 +241,20 @@ window.addEventListener('load', function () {
         let html = '';
 
         if (b.operacion === 'INSERT') {
-            html = `
-                <div class="diff-panel">
-                    <div class="diff-panel-header">🆕 Valores insertados</div>
-                    <div class="diff-panel-body">
-                        ${renderObjeto(nuevo, 'nuevo')}
-                    </div>
-                </div>
-            `;
+            html = `<div class="diff-panel"><div class="diff-panel-header">Datos Creados</div><div class="diff-panel-body">${renderObjeto(nuevo, 'nuevo')}</div></div>`;
         } else if (b.operacion === 'DELETE') {
-            html = `
-                <div class="diff-panel">
-                    <div class="diff-panel-header">🗑️ Valores eliminados</div>
-                    <div class="diff-panel-body">
-                        ${renderObjeto(anterior, 'eliminado')}
-                    </div>
-                </div>
-            `;
+            html = `<div class="diff-panel"><div class="diff-panel-header">Datos Eliminados</div><div class="diff-panel-body">${renderObjeto(anterior, 'eliminado')}</div></div>`;
         } else {
-            // UPDATE: mostrar diff
+            // UPDATE
             html = `
                 <div class="diff-container">
                     <div class="diff-panel">
-                        <div class="diff-panel-header">Antes</div>
-                        <div class="diff-panel-body">
-                            ${renderObjeto(anterior, 'anterior', nuevo)}
-                        </div>
+                        <div class="diff-panel-header">Antes del cambio</div>
+                        <div class="diff-panel-body">${renderObjeto(anterior, 'anterior', nuevo)}</div>
                     </div>
                     <div class="diff-panel">
-                        <div class="diff-panel-header">Después</div>
-                        <div class="diff-panel-body">
-                            ${renderObjeto(nuevo, 'nuevo', anterior)}
-                        </div>
+                        <div class="diff-panel-header">Después del cambio</div>
+                        <div class="diff-panel-body">${renderObjeto(nuevo, 'nuevo', anterior)}</div>
                     </div>
                 </div>
             `;
@@ -351,71 +265,29 @@ window.addEventListener('load', function () {
     };
 
     function renderObjeto(obj, tipo, comparar = null) {
-        if (!obj || Object.keys(obj).length === 0) {
-            return '<em class="text-muted">Sin datos</em>';
-        }
+        if (!obj || Object.keys(obj).length === 0) return '<em class="text-muted">Sin datos registrados</em>';
         return Object.entries(obj).map(([k, v]) => {
             let clase = '';
             if (comparar) {
-                if (tipo === 'nuevo' && JSON.stringify(v) !== JSON.stringify(comparar[k])) {
-                    clase = 'nuevo';
-                } else if (tipo === 'anterior' && JSON.stringify(v) !== JSON.stringify(comparar[k])) {
-                    clase = 'eliminado';
-                }
+                if (tipo === 'nuevo' && JSON.stringify(v) !== JSON.stringify(comparar[k])) clase = 'nuevo';
+                else if (tipo === 'anterior' && JSON.stringify(v) !== JSON.stringify(comparar[k])) clase = 'eliminado';
             }
-            const valor = typeof v === 'object' ? JSON.stringify(v) : (v ?? '<em>null</em>');
-            return `<div class="diff-line ${clase}">
-                <span class="diff-campo">${escapar(k)}:</span> ${escapar(String(valor))}
-            </div>`;
+            const valor = (v === null || v === '') ? '<span class="text-muted fst-italic">vacío</span>' : escapar(String(v));
+            return `<div class="diff-line ${clase}"><span class="diff-campo">${escapar(k)}:</span> ${valor}</div>`;
         }).join('');
     }
 
-    function parseJSON(str) {
-        if (!str) return {};
-        try { return typeof str === 'string' ? JSON.parse(str) : str; }
-        catch { return {}; }
-    }
-
-    // ---- Filtros ----
+    function parseJSON(str) { if (!str) return {}; try { return typeof str === 'string' ? JSON.parse(str) : str; } catch { return {}; } }
     window.aplicarFiltros = () => cargarBitacora();
+    window.limpiarFiltros = () => { ['filtroUsuario', 'filtroTabla', 'filtroOperacion', 'filtroDesde', 'filtroHasta'].forEach(id => document.getElementById(id).value = ''); cargarBitacora(); };
+    window.recargar = () => { cargarBitacora(); cargarEstadisticas(); };
 
-    window.limpiarFiltros = () => {
-        ['filtroUsuario', 'filtroTabla', 'filtroOperacion', 'filtroDesde', 'filtroHasta']
-            .forEach(id => document.getElementById(id).value = '');
-        cargarBitacora();
-    };
+    function escapar(s) { if (s == null) return ''; return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+    function formatearFecha(f) { const d = new Date(f.replace(' ', 'T')); return d.toLocaleString('es-GT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
 
-    window.recargar = () => {
-        cargarBitacora();
-        cargarEstadisticas();
-    };
-
-    // ---- Utilidades ----
-    function escapar(s) {
-        if (s == null) return '';
-        return String(s).replace(/[&<>"']/g, c => ({
-            '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-        }[c]));
-    }
-
-    function formatearFecha(f) {
-        const d = new Date(f.replace(' ', 'T'));
-        return d.toLocaleString('es-GT', {
-            day: '2-digit', month: 'short', year: 'numeric',
-            hour: '2-digit', minute: '2-digit', second: '2-digit'
-        });
-    }
-
-    // ---- Carga inicial ----
     cargarOpciones();
     cargarEstadisticas();
     cargarBitacora();
-
-    // Auto-refresco cada 30 segundos
-    setInterval(() => {
-        cargarBitacora();
-        cargarEstadisticas();
-    }, 30000);
 });
 </script>
 

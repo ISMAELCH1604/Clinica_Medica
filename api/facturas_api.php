@@ -184,6 +184,43 @@ try {
                 'saldo' => $factura['total'] - $pagado
             ]);
             break;
+        ##
+                // ---- DATOS PARA IMPRIMIR LA FACTURA ----
+        case 'imprimir':
+            $id = (int)$_GET['id'];
+            
+            // 1. Cabecera de la factura
+            $stmt = $pdo->prepare("
+                SELECT f.id_factura, f.fecha_emision, f.total, f.estado,
+                       CONCAT(p.nombre, ' ', p.apellido) AS paciente, p.dpi, p.telefono, p.direccion,
+                       CONCAT(o.nombre, ' ', o.apellido) AS odontologo, o.especialidad
+                FROM facturas f
+                INNER JOIN citas c ON c.id_cita = f.id_cita
+                INNER JOIN pacientes p ON p.id_paciente = c.id_paciente
+                INNER JOIN odontologos o ON o.id_odontologo = c.id_odontologo
+                WHERE f.id_factura = ?
+            ");
+            $stmt->execute([$id]);
+            $factura = $stmt->fetch();
+
+            if (!$factura) {
+                echo json_encode(['ok' => false, 'error' => 'Factura no encontrada']);
+                break;
+            }
+
+            // 2. Detalle de tratamientos
+            $stmt = $pdo->prepare("
+                SELECT t.nombre, t.costo
+                FROM facturas f
+                INNER JOIN detalle_tratamiento_cita d ON d.id_cita = f.id_cita
+                INNER JOIN tratamientos t ON t.id_tratamiento = d.id_tratamiento
+                WHERE f.id_factura = ?
+            ");
+            $stmt->execute([$id]);
+            $tratamientos = $stmt->fetchAll();
+
+            echo json_encode(['ok' => true, 'factura' => $factura, 'tratamientos' => $tratamientos]);
+            break;
 
         default:
             echo json_encode(['ok' => false, 'error' => 'Acción no válida']);

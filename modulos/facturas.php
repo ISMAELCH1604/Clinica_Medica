@@ -4,74 +4,76 @@ requerirRol(['administrador', 'recepcion']);
 require_once '../includes/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h2 class="mb-0">Facturas</h2>
+<style>
+    .action-btn { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid #e5e7eb; background: #fff; color: #6b7280; transition: all 0.2s; }
+    .action-btn:hover { background: #f3f4f6; color: #111827; }
+    .action-btn.view:hover { color: #0d6efd; border-color: #93c5fd; background: #eff6ff; }
+    .action-btn.print:hover { color: #198754; border-color: #a3cfbb; background: #e8f5e9; }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+        <h3 class="fw-bold mb-0 text-dark">Facturación</h3>
+        <p class="text-muted small mb-0">Gestiona las cuentas por cobrar y emite facturas a los pacientes.</p>
+    </div>
     <div class="d-flex gap-2">
-        <select id="filtro" class="form-select" style="min-width: 160px;">
+        <select id="filtro" class="form-select shadow-sm" style="width: auto;">
             <option value="todas">Todas</option>
             <option value="pendientes">Pendientes</option>
             <option value="pagadas">Pagadas</option>
             <option value="anuladas">Anuladas</option>
         </select>
-        <button class="btn btn-success text-nowrap" onclick="emitirFactura()">
-            <i class="bi bi-receipt"></i> Emitir
+        <button class="btn btn-primary shadow-sm px-3" onclick="emitirFactura()">
+            <i class="bi bi-receipt"></i> Emitir Factura
         </button>
     </div>
 </div>
 
-<!-- Resumen -->
-<div class="row g-3 mb-3">
-    <div class="col-6 col-md-3">
-        <div class="card border-primary">
-            <div class="card-body py-3">
-                <div class="text-muted small">Total facturado</div>
-                <div class="h4 mb-0" id="totalFacturado">Q 0.00</div>
-            </div>
+<!-- Resumen KPI -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-3">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="text-muted small text-uppercase fw-bold mb-1">Total Facturado</div>
+            <div class="h4 mb-0 fw-bold" id="totalFacturado">Q 0.00</div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="card border-success">
-            <div class="card-body py-3">
-                <div class="text-muted small">Total cobrado</div>
-                <div class="h4 mb-0 text-success" id="totalCobrado">Q 0.00</div>
-            </div>
+    <div class="col-12 col-md-3">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="text-muted small text-uppercase fw-bold mb-1">Total Cobrado</div>
+            <div class="h4 mb-0 fw-bold text-success" id="totalCobrado">Q 0.00</div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="card border-warning">
-            <div class="card-body py-3">
-                <div class="text-muted small">Por cobrar</div>
-                <div class="h4 mb-0 text-warning" id="totalPorCobrar">Q 0.00</div>
-            </div>
+    <div class="col-12 col-md-3">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="text-muted small text-uppercase fw-bold mb-1">Por Cobrar</div>
+            <div class="h4 mb-0 fw-bold text-danger" id="totalPorCobrar">Q 0.00</div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="card border-secondary">
-            <div class="card-body py-3">
-                <div class="text-muted small">Facturas</div>
-                <div class="h4 mb-0" id="totalFacturas">0</div>
-            </div>
+    <div class="col-12 col-md-3">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="text-muted small text-uppercase fw-bold mb-1">Facturas Emitidas</div>
+            <div class="h4 mb-0 fw-bold" id="totalFacturas">0</div>
         </div>
     </div>
 </div>
 
-<div class="card shadow-sm">
+<!-- Tabla -->
+<div class="card border-0 shadow-sm">
     <div class="table-responsive">
-        <table class="table table-hover mb-0 align-middle">
-            <thead class="table-light">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light text-muted small text-uppercase">
                 <tr>
-                    <th>#</th>
-                    <th class="d-none d-md-table-cell">Fecha</th>
-                    <th>Paciente</th>
-                    <th class="text-end">Total</th>
-                    <th class="text-end d-none d-lg-table-cell">Pagado</th>
-                    <th class="text-end">Saldo</th>
-                    <th>Estado</th>
-                    <th class="text-end">Acciones</th>
+                    <th class="ps-4 py-3 border-0">Factura #</th>
+                    <th class="py-3 border-0">Paciente</th>
+                    <th class="py-3 border-0">Fecha</th>
+                    <th class="text-end py-3 border-0">Total</th>
+                    <th class="text-end py-3 border-0">Saldo</th>
+                    <th class="py-3 border-0">Estado</th>
+                    <th class="text-end pe-4 py-3 border-0">Acciones</th>
                 </tr>
             </thead>
             <tbody id="tablaFacturas">
-                <tr><td colspan="8" class="text-center py-4">Cargando...</td></tr>
+                <tr><td colspan="7" class="text-center py-5 text-muted">Cargando...</td></tr>
             </tbody>
         </table>
     </div>
@@ -79,48 +81,30 @@ require_once '../includes/header.php';
 
 <!-- Modal Emitir Factura -->
 <div class="modal fade" id="modalEmitir" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Emitir factura</h5>
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Emitir Nueva Factura</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p class="text-muted small">
-                    Se muestran las citas con tratamientos asignados que aún no tienen factura.
-                </p>
+                <p class="text-muted small">Selecciona una cita completada que no tenga factura generada.</p>
                 <div class="table-responsive">
-                    <table class="table table-sm table-hover">
-                        <thead class="table-light">
+                    <table class="table table-sm table-hover align-middle">
+                        <thead class="table-light text-muted small text-uppercase">
                             <tr>
-                                <th>#</th>
-                                <th>Fecha</th>
+                                <th>Cita #</th>
                                 <th>Paciente</th>
                                 <th class="text-center">Trat.</th>
                                 <th class="text-end">Total est.</th>
-                                <th></th>
+                                <th class="text-end">Acción</th>
                             </tr>
                         </thead>
                         <tbody id="tablaCitasSinFactura">
-                            <tr><td colspan="6" class="text-center py-3">Cargando...</td></tr>
+                            <tr><td colspan="5" class="text-center py-4 text-muted">Cargando...</td></tr>
                         </tbody>
                     </table>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Detalle Factura -->
-<div class="modal fade" id="modalDetalle" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Detalle de factura <span id="detId"></span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="detalleContenido">
-                <!-- contenido dinámico -->
             </div>
         </div>
     </div>
@@ -132,21 +116,19 @@ require_once '../includes/header.php';
 window.addEventListener('load', function () {
     if (typeof bootstrap === 'undefined') return;
 
-    const modalEmitir  = new bootstrap.Modal(document.getElementById('modalEmitir'));
-    const modalDetalle = new bootstrap.Modal(document.getElementById('modalDetalle'));
+    const modalEmitir = new bootstrap.Modal(document.getElementById('modalEmitir'));
 
-    // ---- Cargar facturas ----
     async function cargarFacturas() {
         const filtro = document.getElementById('filtro').value;
         const tbody  = document.getElementById('tablaFacturas');
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Cargando...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">Cargando...</td></tr>';
 
         try {
             const r = await fetch(`../api/facturas_api.php?accion=listar&filtro=${filtro}`);
             const j = await r.json();
             if (!j.ok) throw new Error(j.error);
 
-            // Calcular resumen
+            // KPIs
             let totFact = 0, totCob = 0, totSaldo = 0;
             j.datos.forEach(f => {
                 if (f.estado !== 'anulada') {
@@ -161,232 +143,208 @@ window.addEventListener('load', function () {
             document.getElementById('totalFacturas').textContent  = j.datos.length;
 
             if (j.datos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">Sin facturas</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">No hay facturas.</td></tr>';
                 return;
             }
 
             tbody.innerHTML = j.datos.map(f => {
                 const badge = {
-                    pagada:    'bg-success',
-                    pendiente: 'bg-warning text-dark',
-                    anulada:   'bg-secondary'
-                }[f.estado] || 'bg-secondary';
-
-                const acciones = f.estado !== 'anulada' ? `
-                    <button class="btn btn-sm btn-outline-primary" onclick="verDetalle(${f.id_factura})" title="Ver detalle">
-                        <i class="bi bi-eye"></i>
-                    </button>
-                    ${parseFloat(f.pagado) === 0 ? `
-                        <button class="btn btn-sm btn-outline-danger" onclick="anular(${f.id_factura})" title="Anular">
-                            <i class="bi bi-x-circle"></i>
-                        </button>
-                    ` : ''}
-                ` : `
-                    <button class="btn btn-sm btn-outline-primary" onclick="verDetalle(${f.id_factura})">
-                        <i class="bi bi-eye"></i>
-                    </button>
-                `;
+                    pagada:    'bg-success bg-opacity-10 text-success border border-success-subtle',
+                    pendiente: 'bg-warning bg-opacity-10 text-warning border border-warning-subtle',
+                    anulada:   'bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle'
+                }[f.estado];
 
                 return `
                     <tr>
-                        <td>${f.id_factura}</td>
-                        <td class="d-none d-md-table-cell">${formatearFecha(f.fecha_emision)}</td>
-                        <td>${escapar(f.paciente)}</td>
-                        <td class="text-end">Q ${parseFloat(f.total).toFixed(2)}</td>
-                        <td class="text-end d-none d-lg-table-cell">Q ${parseFloat(f.pagado).toFixed(2)}</td>
-                        <td class="text-end ${f.saldo > 0 ? 'text-danger fw-bold' : 'text-success'}">
+                        <td class="ps-4 fw-bold text-primary">#${f.id_factura}</td>
+                        <td>
+                            <div class="fw-bold text-dark">${escapar(f.paciente)}</div>
+                            <div class="text-muted small">Cita: ${formatearFecha(f.fecha_cita)}</div>
+                        </td>
+                        <td class="text-muted">${formatearFecha(f.fecha_emision)}</td>
+                        <td class="text-end fw-medium">Q ${parseFloat(f.total).toFixed(2)}</td>
+                        <td class="text-end fw-bold ${f.saldo > 0 ? 'text-danger' : 'text-success'}">
                             Q ${parseFloat(f.saldo).toFixed(2)}
                         </td>
-                        <td><span class="badge ${badge}">${f.estado}</span></td>
-                        <td class="text-end">${acciones}</td>
+                        <td><span class="badge ${badge} rounded-pill px-2 py-1">${f.estado}</span></td>
+                        <td class="text-end pe-4">
+                            <button class="action-btn print me-1" onclick="imprimirFactura(${f.id_factura})" title="Imprimir Factura">
+                                <i class="bi bi-printer"></i>
+                            </button>
+                        </td>
                     </tr>
                 `;
             }).join('');
         } catch (e) {
-            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-danger">Error: ${e.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-danger">Error: ${e.message}</td></tr>`;
         }
     }
 
-    // ---- Citas sin factura ----
     async function cargarCitasSinFactura() {
         const tbody = document.getElementById('tablaCitasSinFactura');
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3">Cargando...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Buscando...</td></tr>';
 
         const r = await fetch('../api/facturas_api.php?accion=citas_sin_factura');
         const j = await r.json();
-        if (!j.ok) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-danger text-center">${j.error}</td></tr>`;
-            return;
-        }
-
+        
         if (j.datos.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted">No hay citas pendientes de facturar</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No hay citas pendientes de facturar.</td></tr>';
             return;
         }
 
         tbody.innerHTML = j.datos.map(c => `
             <tr>
-                <td>${c.id_cita}</td>
-                <td>${formatearFecha(c.fecha_hora)}</td>
-                <td>${escapar(c.paciente)}</td>
+                <td>#${c.id_cita}</td>
+                <td class="fw-medium">${escapar(c.paciente)}</td>
                 <td class="text-center">${c.num_tratamientos}</td>
-                <td class="text-end">Q ${parseFloat(c.total_estimado).toFixed(2)}</td>
+                <td class="text-end fw-bold">Q ${parseFloat(c.total_estimado).toFixed(2)}</td>
                 <td class="text-end">
-                    <button class="btn btn-sm btn-success" onclick="confirmarEmitir(${c.id_cita})">
-                        Emitir
-                    </button>
+                    <button class="btn btn-sm btn-primary" onclick="confirmarEmitir(${c.id_cita})">Emitir</button>
                 </td>
             </tr>
         `).join('');
     }
 
-    // ---- Exponer globales ----
     window.emitirFactura = function () {
         cargarCitasSinFactura();
         modalEmitir.show();
     };
 
     window.confirmarEmitir = async function (id_cita) {
-        if (!confirm('¿Emitir la factura para esta cita?')) return;
-
+        if (!confirm('¿Generar la factura para esta cita?')) return;
         const datos = new FormData();
         datos.append('accion', 'emitir');
         datos.append('id_cita', id_cita);
-
         const r = await fetch('../api/facturas_api.php', { method: 'POST', body: datos });
         const j = await r.json();
-
-        if (j.ok) {
-            modalEmitir.hide();
-            mostrarAlerta(`Factura #${j.id_factura} emitida por Q ${parseFloat(j.total).toFixed(2)}`, 'success');
-            cargarFacturas();
-        } else {
-            mostrarAlerta(j.error, 'danger');
-        }
+        if (j.ok) { modalEmitir.hide(); mostrarAlerta('Factura generada', 'success'); cargarFacturas(); } 
+        else { mostrarAlerta(j.error, 'danger'); }
     };
 
-    window.anular = async function (id) {
-        if (!confirm('¿Anular esta factura? Esta acción no se puede deshacer.')) return;
+    window.imprimirFactura = async function(id) {
+        // Abrimos una pestaña nueva
+        const ventana = window.open('', '_blank');
+        ventana.document.write('<div style="text-align:center; padding:50px; font-family:sans-serif;">Cargando factura...</div>');
 
-        const datos = new FormData();
-        datos.append('accion', 'anular');
-        datos.append('id_factura', id);
-
-        const r = await fetch('../api/facturas_api.php', { method: 'POST', body: datos });
+        const r = await fetch(`../api/facturas_api.php?accion=imprimir&id=${id}`);
         const j = await r.json();
 
-        if (j.ok) {
-            mostrarAlerta(j.mensaje, 'success');
-            cargarFacturas();
-        } else {
-            mostrarAlerta(j.error, 'danger');
+        if (!j.ok) {
+            ventana.close();
+            return mostrarAlerta(j.error, 'danger');
         }
-    };
-
-    window.verDetalle = async function (id) {
-        const r = await fetch(`../api/facturas_api.php?accion=detalle&id=${id}`);
-        const j = await r.json();
-        if (!j.ok) return mostrarAlerta(j.error, 'danger');
 
         const f = j.factura;
-        document.getElementById('detId').textContent = '#' + f.id_factura;
-
-        const tratamientos = j.tratamientos.map(t => `
-            <tr>
-                <td>${escapar(t.nombre)}</td>
-                <td class="text-end">Q ${parseFloat(t.costo).toFixed(2)}</td>
-            </tr>
-        `).join('') || '<tr><td colspan="2" class="text-muted text-center">Sin tratamientos</td></tr>';
-
-        const pagos = j.pagos.map(p => `
-            <tr>
-                <td>${formatearFecha(p.fecha_pago)}</td>
-                <td>${p.metodo_pago}</td>
-                <td class="text-end">Q ${parseFloat(p.monto).toFixed(2)}</td>
-            </tr>
-        `).join('') || '<tr><td colspan="3" class="text-muted text-center">Sin pagos registrados</td></tr>';
-
-        document.getElementById('detalleContenido').innerHTML = `
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <p class="mb-1"><strong>Paciente:</strong> ${escapar(f.paciente)}</p>
-                    <p class="mb-1"><small class="text-muted">DPI: ${escapar(f.dpi)}</small></p>
-                    <p class="mb-0"><small class="text-muted">Tel: ${escapar(f.telefono || '-')}</small></p>
+        
+        // Construimos el HTML de la factura
+        let html = `
+            <html>
+            <head>
+                <title>Factura #${f.id_factura}</title>
+                <style>
+                    body { font-family: 'Arial', sans-serif; color: #333; margin: 0; padding: 40px; }
+                    .header { display: flex; justify-content: space-between; border-bottom: 2px solid #0d6efd; padding-bottom: 20px; margin-bottom: 30px; }
+                    .logo { font-size: 24px; font-weight: bold; color: #0d6efd; }
+                    .info { text-align: right; }
+                    .details { display: flex; justify-content: space-between; margin-bottom: 40px; }
+                    .box { width: 45%; }
+                    .box h4 { margin-bottom: 5px; color: #666; font-size: 12px; text-transform: uppercase; }
+                    .box p { margin: 0; font-size: 14px; line-height: 1.5; }
+                    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                    th { text-align: left; border-bottom: 1px solid #ddd; padding: 10px; color: #666; font-size: 12px; text-transform: uppercase; }
+                    td { padding: 10px; border-bottom: 1px solid #eee; font-size: 14px; }
+                    .totales { width: 50%; float: right; }
+                    .totales table td { border: none; padding: 5px 10px; }
+                    .total-row { font-size: 18px; font-weight: bold; color: #0d6efd; }
+                    .footer { text-align: center; margin-top: 80px; font-size: 12px; color: #999; border-top: 1px solid #eee; padding-top: 20px; clear: both;}
+                    @media print {
+                        body { padding: 0; }
+                        .no-print { display: none; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="no-print" style="background: #eef2f5; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Vista previa de impresión</span>
+                    <button onclick="window.print()" style="background: #0d6efd; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">Imprimir / Guardar PDF</button>
                 </div>
-                <div class="col-md-6 text-md-end">
-                    <p class="mb-1"><strong>Emitida:</strong> ${formatearFecha(f.fecha_emision)}</p>
-                    <p class="mb-0"><strong>Cita:</strong> ${formatearFecha(f.fecha_cita)}</p>
+
+                <div class="header">
+                    <div>
+                        <div class="logo">🦷 Clínica Dental</div>
+                        <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Ciudad de Guatemala, Guatemala<br>Tel: 2222-3333</p>
+                    </div>
+                    <div class="info">
+                        <h2 style="margin: 0; color: #333;">FACTURA</h2>
+                        <p style="margin: 5px 0 0 0; font-weight: bold;">#${f.id_factura}</p>
+                        <p style="margin: 0; font-size: 12px; color: #666;">Fecha: ${formatearFecha(f.fecha_emision)}</p>
+                    </div>
                 </div>
-            </div>
 
-            <h6 class="mt-3">Tratamientos</h6>
-            <table class="table table-sm">
-                <thead class="table-light">
-                    <tr><th>Tratamiento</th><th class="text-end">Costo</th></tr>
-                </thead>
-                <tbody>${tratamientos}</tbody>
-                <tfoot>
-                    <tr class="fw-bold">
-                        <td class="text-end">Total:</td>
-                        <td class="text-end">Q ${parseFloat(f.total).toFixed(2)}</td>
-                    </tr>
-                </tfoot>
-            </table>
+                <div class="details">
+                    <div class="box">
+                        <h4>Facturado a:</h4>
+                        <p><strong>${escapar(f.paciente)}</strong></p>
+                        <p>DPI: ${escapar(f.dpi)}</p>
+                        <p>Tel: ${escapar(f.telefono || '-')}</p>
+                        <p>${escapar(f.direccion || '')}</p>
+                    </div>
+                    <div class="box" style="text-align: right;">
+                        <h4>Atendido por:</h4>
+                        <p>Dr(a). ${escapar(f.odontologo)}</p>
+                        <p>Especialidad: ${escapar(f.especialidad)}</p>
+                    </div>
+                </div>
 
-            <h6 class="mt-3">Pagos</h6>
-            <table class="table table-sm">
-                <thead class="table-light">
-                    <tr><th>Fecha</th><th>Método</th><th class="text-end">Monto</th></tr>
-                </thead>
-                <tbody>${pagos}</tbody>
-                <tfoot>
-                    <tr class="fw-bold">
-                        <td colspan="2" class="text-end">Pagado:</td>
-                        <td class="text-end text-success">Q ${j.pagado.toFixed(2)}</td>
-                    </tr>
-                    <tr class="fw-bold">
-                        <td colspan="2" class="text-end">Saldo:</td>
-                        <td class="text-end ${j.saldo > 0 ? 'text-danger' : 'text-success'}">
-                            Q ${j.saldo.toFixed(2)}
-                        </td>
-                    </tr>
-                </tfoot>
-            </table>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Descripción del Tratamiento</th>
+                            <th style="text-align: right;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+        
+        j.tratamientos.forEach(t => {
+            html += `<tr><td>${escapar(t.nombre)}</td><td style="text-align: right;">Q ${parseFloat(t.costo).toFixed(2)}</td></tr>`;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+
+                <div class="totales">
+                    <table>
+                        <tr>
+                            <td style="text-align: right; color: #666;">Subtotal:</td>
+                            <td style="text-align: right;">Q ${parseFloat(f.total).toFixed(2)}</td>
+                        </tr>
+                        <tr class="total-row">
+                            <td style="text-align: right;">TOTAL:</td>
+                            <td style="text-align: right;">Q ${parseFloat(f.total).toFixed(2)}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="footer">
+                    ¡Gracias por confiar en Clínica Dental!<br>
+                    Este documento es un comprobante de los servicios prestados.
+                </div>
+            </body>
+            </html>
         `;
 
-        modalDetalle.show();
+        ventana.document.open();
+        ventana.document.write(html);
+        ventana.document.close();
     };
 
-    // ---- Filtro ----
     document.getElementById('filtro').addEventListener('change', cargarFacturas);
 
-    // ---- Utilidades ----
-    function escapar(s) {
-        if (s == null) return '';
-        return String(s).replace(/[&<>"']/g, c => ({
-            '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-        }[c]));
-    }
+    function escapar(s) { if (s == null) return ''; return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+    function formatearFecha(f) { if(!f) return '-'; const d = new Date(f.replace(' ', 'T')); return d.toLocaleString('es-GT', { day: '2-digit', month: 'short', year: 'numeric' }); }
+    function mostrarAlerta(msg, tipo) { const id = 'al-' + Date.now(); document.getElementById('alertas').insertAdjacentHTML('beforeend', `<div id="${id}" class="alert alert-${tipo} alert-dismissible fade show shadow-sm" role="alert" style="border-radius: 10px;">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`); setTimeout(() => document.getElementById(id)?.remove(), 3500); }
 
-    function formatearFecha(f) {
-        const d = new Date(f.replace(' ', 'T'));
-        return d.toLocaleString('es-GT', {
-            day: '2-digit', month: 'short', year: 'numeric',
-            hour: '2-digit', minute: '2-digit'
-        });
-    }
-
-    function mostrarAlerta(msg, tipo) {
-        const id = 'al-' + Date.now();
-        document.getElementById('alertas').insertAdjacentHTML('beforeend', `
-            <div id="${id}" class="alert alert-${tipo} alert-dismissible fade show shadow">
-                ${msg}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>`);
-        setTimeout(() => document.getElementById(id)?.remove(), 4000);
-    }
-
-    // ---- Carga inicial ----
     cargarFacturas();
 });
 </script>
