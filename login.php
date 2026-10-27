@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $u = $stmt->fetch();
 
         if ($u && password_verify($password, $u['password_hash'])) {
-            // ✅ Login exitoso: regenerar ID de sesión (evita session fixation)
+            // Login exitoso: regenerar ID de sesión (evita session fixation)
             session_regenerate_id(true);
 
             $_SESSION['id_usuario']       = $u['id_usuario'];
@@ -50,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Clínica Dental</title>
+    <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -172,7 +173,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             opacity: .7;
         }
 
-        /* ---------- Panel del formulario ---------- */
+        /* Panel del formulario */
         .form-panel {
             display: flex;
             align-items: center;
@@ -283,7 +284,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .msg-aviso  { background: #fff7e6; border-color: #f6dca6; color: #7a5200; }
         .msg-error  { background: #fdecee; border-color: #f5c2c8; color: #8f1d2c; }
 
-        /* ---------- Responsive ---------- */
+        /* Responsive  */
         @media (max-width: 899.98px) {
             .login-shell { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
             .brand-panel { padding: 1.75rem 1.5rem 2.25rem; gap: 1.5rem; }
