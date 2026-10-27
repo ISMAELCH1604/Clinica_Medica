@@ -358,7 +358,7 @@ window.addEventListener('load', function () {
         setTimeout(() => document.getElementById(id)?.remove(), 3500);
     }
 
-    // ---- Búsqueda en vivo ----
+    // Búsqueda en vivo 
     let timeoutBusqueda;
     document.getElementById('buscador').addEventListener('input', e => {
         clearTimeout(timeoutBusqueda);

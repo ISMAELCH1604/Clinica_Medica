@@ -1,8 +1,4 @@
 <?php
-/**
- * seguridad.php — Funciones y validaciones de seguridad comunes
- * Incluir este archivo en TODOS los módulos y APIs.
- */
 
 if (session_status() === PHP_SESSION_NONE) {
     // Configuración segura de sesión ANTES de iniciarla
@@ -34,7 +30,7 @@ function requerirRol($rolesPermitidos = []) {
     requerirLogin();
     if (!in_array($_SESSION['rol'] ?? '', $rolesPermitidos)) {
         http_response_code(403);
-        die('⛔ Acceso denegado: no tienes permisos para ver esta sección.');
+        die('Acceso denegado: no tienes permisos para ver esta sección.');
     }
 }
 

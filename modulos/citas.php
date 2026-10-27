@@ -362,7 +362,7 @@ window.addEventListener('load', function () {
         document.getElementById('listaTratamientos').innerHTML = html;
     };
 
-    // --- LÓGICA DE DISPONIBILIDAD ---
+    // LÓGICA DE DISPONIBILIDAD
     window.abrirDisponibilidad = async function() {
         const j = await cargarOpciones(); // Aprovechamos para llenar el select de consultorios
         if(j && j.ok) {

@@ -52,7 +52,7 @@ require_once '../includes/header.php';
 <div id="areaImpresion" class="card border-0 shadow-sm p-4">
     <!-- Encabezado solo visible al imprimir -->
     <div class="d-none d-print-block text-center mb-4 border-bottom pb-3">
-        <h2 class="fw-bold">🦷 Clínica Dental</h2>
+        <h2 class="fw-bold">Clínica Dental</h2>
         <h5 id="tituloImpresion" class="text-muted"></h5>
         <p class="small mb-0">Generado el: <?= date('d/m/Y H:i A') ?> por <?= htmlspecialchars($_SESSION['nombre_usuario']) ?></p>
     </div>

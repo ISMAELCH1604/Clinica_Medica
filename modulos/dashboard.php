@@ -6,9 +6,7 @@ require_once '../includes/header.php';
 
 $rol = strtolower($_SESSION['rol'] ?? '');
 
-// ==========================================
-// CONSULTAS SEGÚN EL ROL (Mínimo Privilegio)
-// ==========================================
+// CONSULTAS SEGÚN EL ROL.
 
 $totalPacientes = 0; $citasHoy = 0; $saldoPorCobrar = 0; $ingresosMes = 0;
 $citasHoyLista = [];

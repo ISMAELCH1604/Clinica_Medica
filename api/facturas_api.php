@@ -1,13 +1,10 @@
 <?php
-// =====================================================================
-// API de Facturas — con seguridad centralizada
-// =====================================================================
 require_once '../conexion.php';
 require_once '../includes/seguridad.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-// --- SEGURIDAD: exigir sesión activa (responde JSON si no lo está) ---
+// SEGURIDAD: exigir sesión activa (responde JSON si no lo está)
 requerirLoginAPI();
 
 $accion = $_POST['accion'] ?? $_GET['accion'] ?? '';
@@ -15,7 +12,7 @@ $accion = $_POST['accion'] ?? $_GET['accion'] ?? '';
 try {
     switch ($accion) {
 
-        // ---- LISTAR con saldo y filtro por estado ----
+        // LISTAR con saldo y filtro por estado
         case 'listar':
             $filtro = $_GET['filtro'] ?? 'todas';
             $where  = '';
@@ -52,7 +49,7 @@ try {
             echo json_encode(['ok' => true, 'datos' => $pdo->query($sql)->fetchAll()]);
             break;
 
-        // ---- Citas sin factura y con tratamientos asignados ----
+        // Citas sin factura y con tratamientos asignados
         case 'citas_sin_factura':
             $sql = "
                 SELECT c.id_cita, c.fecha_hora, c.estado,
@@ -73,7 +70,7 @@ try {
             echo json_encode(['ok' => true, 'datos' => $pdo->query($sql)->fetchAll()]);
             break;
 
-        // ---- EMITIR factura desde cita (usa procedimiento almacenado) ----
+        // EMITIR factura desde cita (usa procedimiento almacenado)
         case 'emitir':
             $id_cita = (int)($_POST['id_cita'] ?? 0);
 
@@ -100,7 +97,7 @@ try {
             }
             break;
 
-        // ---- ANULAR factura ----
+        // ANULAR factura
         case 'anular':
             $id = (int)($_POST['id_factura'] ?? 0);
 
@@ -127,7 +124,7 @@ try {
             echo json_encode(['ok' => true, 'mensaje' => 'Factura anulada']);
             break;
 
-        // ---- DETALLE de una factura: tratamientos + pagos ----
+        // DETALLE de una factura: tratamientos + pagos
         case 'detalle':
             $id = (int)($_GET['id'] ?? 0);
 
@@ -185,7 +182,7 @@ try {
             ]);
             break;
         ##
-                // ---- DATOS PARA IMPRIMIR LA FACTURA ----
+                // DATOS PARA IMPRIMIR LA FACTURA
         case 'imprimir':
             $id = (int)$_GET['id'];
             

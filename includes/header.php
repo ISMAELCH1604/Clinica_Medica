@@ -176,5 +176,5 @@ $nombre = $_SESSION['nombre_usuario'] ?? '';
             </div>
         </nav>
 
-        <!-- Aquí empieza el contenido de cada página -->
+        <!-- contenido de cada página -->
         <main class="main-content">

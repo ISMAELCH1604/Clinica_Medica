@@ -89,7 +89,7 @@ try {
             }
             break;
         ##
-                // ---- GUARDAR EXPEDIENTE CLÍNICO ----
+                // GUARDAR EXPEDIENTE CLÍNICO
         case 'guardar_expediente':
             $id_cita = (int)$_POST['id_cita'];
             $diagnostico = trim($_POST['diagnostico']);
@@ -119,7 +119,7 @@ try {
             }
             break;
 
-        // ---- OBTENER EXPEDIENTE DE UNA CITA ----
+        // OBTENER EXPEDIENTE DE UNA CITA
         case 'obtener_expediente_cita':
             $id_cita = (int)$_GET['id_cita'];
             $stmt = $pdo->prepare("SELECT diagnostico, historial FROM expedientes_clinicos WHERE id_cita = ?");
@@ -128,7 +128,7 @@ try {
             echo json_encode(['ok' => true, 'expediente' => $expediente ?: null]);
             break;
         ##
-                // ---- OBTENER LOS TRATAMIENTOS DE UNA CITA ----
+                // OBTENER LOS TRATAMIENTOS DE UNA CITA
         case 'obtener_tratamientos':
             $id_cita = (int)$_GET['id_cita'];
             
@@ -143,7 +143,7 @@ try {
             echo json_encode(['ok' => true, 'tratamientos' => $tratamientos, 'asignados' => $asignados]);
             break;
 
-        // ---- GUARDAR TRATAMIENTOS EN UNA CITA ----
+        // GUARDAR TRATAMIENTOS EN UNA CITA
         case 'guardar_tratamientos':
             $id_cita = (int)$_POST['id_cita'];
             $tratamientos = $_POST['tratamientos'] ?? []; // Array con los IDs
@@ -171,7 +171,7 @@ try {
             }
             break;
         ##
-                // ---- OBTENER DISPONIBILIDAD DE HORARIOS ----
+                // OBTENER DISPONIBILIDAD DE HORARIOS
         case 'disponibilidad':
             $fecha = $_GET['fecha'] ?? date('Y-m-d');
             $id_consultorio = (int)$_GET['id_consultorio'];
@@ -180,7 +180,7 @@ try {
             $horariosBase = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
             
             // 2. Buscar las citas ya agendadas para ese consultorio en esa fecha
-            // Usamos TIME_FORMAT para que devuelva solo "HH:MM" y no los segundos
+            //  TIME_FORMAT para que devuelva solo "HH:MM" y no los segundos
             $stmt = $pdo->prepare("
                 SELECT TIME_FORMAT(fecha_hora, '%H:%i') AS hora_ocupada 
                 FROM citas 
