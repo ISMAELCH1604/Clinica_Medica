@@ -87,6 +87,40 @@ try {
             $stmt->execute([$id]);
             echo json_encode(['ok' => true, 'mensaje' => 'Paciente eliminado']);
             break;
+        ##
+        case 'expediente':
+            $id = $_GET['id'] ?? 0;
+            
+            // 1. Obtener datos del paciente
+            $stmt = $pdo->prepare("SELECT nombre, apellido, dpi, telefono FROM pacientes WHERE id_paciente = ?");
+            $stmt->execute([$id]);
+            $paciente = $stmt->fetch();
+
+            if (!$paciente) {
+                echo json_encode(['ok' => false, 'error' => 'Paciente no encontrado.']);
+                break;
+            }
+
+            // 2. Obtener los expedientes (uniendo la cita, el diagnóstico y el odontólogo)
+            $stmt = $pdo->prepare("
+                SELECT e.diagnostico, e.historial, e.fecha_registro AS fecha_hora, 
+                       CONCAT(o.nombre, ' ', o.apellido) AS odontologo
+                FROM citas c
+                INNER JOIN expedientes_clinicos e ON e.id_cita = c.id_cita
+                INNER JOIN odontologos o ON o.id_odontologo = c.id_odontologo
+                WHERE c.id_paciente = ?
+                ORDER BY e.fecha_registro DESC
+            ");
+            $stmt->execute([$id]);
+            $expedientes = $stmt->fetchAll();
+
+            // 3. Devolver todo al frontend
+            echo json_encode([
+                'ok' => true, 
+                'paciente' => $paciente, 
+                'expedientes' => $expedientes
+            ]);
+            break;
 
         default:
             echo json_encode(['ok' => false, 'error' => 'Acción no válida']);

@@ -1,4 +1,6 @@
 <?php
+require_once '../includes/seguridad.php';
+requerirRol(['administrador', 'recepcion']);
 require_once '../includes/header.php';
 ?>
 

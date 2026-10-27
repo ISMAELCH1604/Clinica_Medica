@@ -88,6 +88,45 @@ try {
                 echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
             }
             break;
+        ##
+                // ---- GUARDAR EXPEDIENTE CLÍNICO ----
+        case 'guardar_expediente':
+            $id_cita = (int)$_POST['id_cita'];
+            $diagnostico = trim($_POST['diagnostico']);
+            $historial = trim($_POST['historial']);
+
+            if ($id_cita <= 0 || $diagnostico === '') {
+                echo json_encode(['ok' => false, 'error' => 'El diagnóstico es obligatorio.']);
+                break;
+            }
+
+            // Verificar si ya existe para actualizarlo o crear uno nuevo
+            $stmt = $pdo->prepare("SELECT id_expediente FROM expedientes_clinicos WHERE id_cita = ?");
+            $stmt->execute([$id_cita]);
+            $existe = $stmt->fetchColumn();
+
+            try {
+                if ($existe) {
+                    $stmt = $pdo->prepare("UPDATE expedientes_clinicos SET diagnostico = ?, historial = ? WHERE id_cita = ?");
+                    $stmt->execute([$diagnostico, $historial, $id_cita]);
+                } else {
+                    $stmt = $pdo->prepare("INSERT INTO expedientes_clinicos (id_cita, diagnostico, historial) VALUES (?, ?, ?)");
+                    $stmt->execute([$id_cita, $diagnostico, $historial]);
+                }
+                echo json_encode(['ok' => true, 'mensaje' => 'Expediente guardado correctamente']);
+            } catch (PDOException $e) {
+                echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+            }
+            break;
+
+        // ---- OBTENER EXPEDIENTE DE UNA CITA ----
+        case 'obtener_expediente_cita':
+            $id_cita = (int)$_GET['id_cita'];
+            $stmt = $pdo->prepare("SELECT diagnostico, historial FROM expedientes_clinicos WHERE id_cita = ?");
+            $stmt->execute([$id_cita]);
+            $expediente = $stmt->fetch();
+            echo json_encode(['ok' => true, 'expediente' => $expediente ?: null]);
+            break;
 
         default:
             echo json_encode(['ok' => false, 'error' => 'Acción no válida']);
