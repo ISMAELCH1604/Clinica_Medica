@@ -1,5 +1,6 @@
 # Sistema de Gestión Clínica Dental
 
+Proyecto final Curso Base de datos I.
 Sistema web para la gestión operativa de una clínica dental. Agenda de citas, expedientes clínicos, facturación y pagos, garantizando la integridad de los datos mediante el uso de procedimientos almacenados y la seguridad por medio de roles y auditoría.
 
 ## Características Principales
